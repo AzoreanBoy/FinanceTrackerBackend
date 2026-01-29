@@ -91,6 +91,9 @@ DATABASES: Dict[str, Dict[str, Any]] = {
 }
 
 
+# Authentication Settings
+AUTH_USER_MODEL = "accounts.CustomUser"
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
