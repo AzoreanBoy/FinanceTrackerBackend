@@ -1,4 +1,4 @@
-# from django.db import models
+from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
@@ -12,6 +12,6 @@ class CustomUser(AbstractUser):
     """
 
     # Exemplo de campo que pode vir a ser útil
-    # timezone = models.CharField(max_length=50, default="Europe/Lisbon")
+    timezone = models.CharField(max_length=50, default="Europe/Lisbon")
 
     pass
