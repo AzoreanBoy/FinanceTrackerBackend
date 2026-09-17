@@ -1,0 +1,7 @@
+{
+    "plugins": [
+        "django"
+    ],
+    "pythonVersion": "3.14",
+    "djangoSettingsModule": "config.settings"
+}
