@@ -30,6 +30,45 @@ class Account(models.Model):
         return self.name
 
 
+class BalanceCorrection(models.Model):
+    """
+    This model represents a correction to the balance of an account.
+    Each balance correction is linked to an account and has an amount, description, and timestamp.
+    The save method is overridden to automatically update the account balance when a balance correction is created. The delete method is also overridden to update the account balance when a balance correction is deleted.
+    Attributes:
+        id (UUID): A unique identifier for the balance correction.
+        account (ForeignKey): A foreign key linking the balance correction to an account, this allows for tracking of balance corrections within specific accounts.
+        amount (Decimal): The amount of the balance correction. This field can be positive or negative, depending on whether the correction increases or decreases the account balance.
+        description (str): A description of the balance correction. This field can be used to provide additional information about the reason for the correction.
+        created_at (DateTime): The date and time when the balance correction was created.
+
+    The save method is overridden to automatically update the account balance when a balance correction is created. The delete method is also overridden to update the account balance when a balance correction is deleted.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    account = models.ForeignKey(
+        Account, on_delete=models.CASCADE, related_name="balance_corrections"
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.CharField(max_length=200, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        with db_transaction.atomic():
+            self.account.balance += self.amount
+            self.account.save()
+            super().save(*args, **kwargs)
+    
+    def delete(self, *args, **kwargs):
+        with db_transaction.atomic():
+            self.account.balance -= self.amount
+            self.account.save()
+            super().delete(*args, **kwargs)
+
+    def __str__(self):
+        return f"Atualização de Saldo - {self.account} | Saldo Final: {self.account.balance} ({self.amount}) | {self.description}"
+
+
 class Category(models.Model):
     """
     This model represents a category for financial transactions, such as "Food", "Rent", or "Salary".
