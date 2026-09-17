@@ -55,6 +55,20 @@ class AccountSerializer(serializers.ModelSerializer):
         return name
 
 
+class BalanceCorrectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BalanceCorrection
+        fields = ["id", "account", "amount", "description"]
+        read_only_fields = ["id"]
+
+    def validate_amount(self, value: float) -> float:
+        if value == 0:
+            raise serializers.ValidationError(
+                "O valor da atualização de saldo não pode ser zero."
+            )
+        return value
+
+
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
