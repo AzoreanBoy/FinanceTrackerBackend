@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     
     # Third-party apps
     "rest_framework",
+    "rest_framework.authtoken",
     
     # Project apps
     "accounts",
@@ -136,4 +137,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
+    "DEFAULT_PERMISSION_CLASSES": [
+            "rest_framework.permissions.IsAuthenticated",
+        ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
 }
