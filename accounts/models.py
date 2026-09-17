@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+
 class CustomUser(AbstractUser):
     """
     Custom user model.
@@ -13,5 +14,10 @@ class CustomUser(AbstractUser):
 
     # Exemplo de campo que pode vir a ser útil
     timezone = models.CharField(max_length=50, default="Europe/Lisbon")
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    pass
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return self.username
