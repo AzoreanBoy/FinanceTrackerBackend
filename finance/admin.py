@@ -21,11 +21,19 @@ class TransactionAdmin(admin.ModelAdmin):
 
 @admin.register(Transfer)
 class TransferAdmin(admin.ModelAdmin):
-    list_display = ("from_account", "to_account", "amount", "date")
+    list_display = ("from_account", "to_account", "amount")
     search_fields = ("from_account__name", "to_account__name")
+    
+    def delete_queryset(self, request, queryset):
+        for transfer in queryset:
+            transfer.delete()
 
 
 @admin.register(SavingsGoal)
 class SavingsGoalAdmin(admin.ModelAdmin):
-    list_display = ("name", "target_amount", "current_amount", "deadline")
+    list_display = ("name", "target_amount", "current_amount", "account")
     search_fields = ("name",)
+    
+    def delete_queryset(self, request, queryset):
+        for goal in queryset:
+            goal.delete()
