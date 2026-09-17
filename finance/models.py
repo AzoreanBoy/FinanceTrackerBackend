@@ -42,6 +42,9 @@ class Category(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
+    owner = models.ForeignKey(
+        "accounts.CustomUser", on_delete=models.CASCADE, related_name="user_categories", default=None, blank=True, null=True
+    )
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     type = models.CharField(
@@ -66,6 +69,9 @@ class SubCategory(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
+    owner = models.ForeignKey(
+        "accounts.CustomUser", on_delete=models.CASCADE, related_name="user_subcategories", default=None, blank=True, null=True
+    )
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     category = models.ForeignKey(
