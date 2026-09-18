@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     
     # Third-party apps
     "rest_framework",
+    "drf_spectacular",
     "rest_framework.authtoken",
     
     # Project apps
@@ -142,4 +143,5 @@ REST_FRAMEWORK = {
         ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
