@@ -26,6 +26,10 @@ from drf_spectacular.views import (
 )
 
 urlpatterns = [
+    # Web application
+    path("", include("finance.web_urls")),
+    path("accounts/", include("accounts.web_urls")),
+    path("accounts/", include("django.contrib.auth.urls")),
     # Admin site
     path("admin/", admin.site.urls),
     # Documentation and schema
