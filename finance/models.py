@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models, transaction as db_transaction
+from django.utils import timezone
 
 
 class Account(models.Model):
@@ -51,6 +52,7 @@ class BalanceCorrection(models.Model):
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.CharField(max_length=200, blank=True, null=True)
+    transaction_date = models.DateField(default=timezone.localdate)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -153,6 +155,7 @@ class Transaction(models.Model):
     )
     title = models.CharField(max_length=50, blank=True, null=True)
     description = models.CharField(max_length=200, blank=True, null=True)
+    transaction_date = models.DateField(default=timezone.localdate)
     created_at = models.DateTimeField(auto_now_add=True)
     category = models.ForeignKey(
         Category,
@@ -254,6 +257,7 @@ class Transfer(models.Model):
         Account, on_delete=models.CASCADE, related_name="incoming_transfers"
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_date = models.DateField(default=timezone.localdate)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
