@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Overview
+{% endblock %}
+{% block eyebrow %}
+  Balance as of {{ as_of_date|date:'l, d F Y' }}
+{% endblock %}
+{% block page_heading %}
+  Your money, in focus
+{% endblock %}
+
+{% block content %}
+  <form method="get" class="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
+    <label><span class="mb-1 block text-[11px] font-bold uppercase tracking-[.16em] text-slate-500">View balance as of</span><input type="date" name="as_of" value="{{ as_of_date|date:'Y-m-d' }}" class="rounded-xl border border-slate-200 bg-mist px-3 py-2 text-sm font-semibold text-ink outline-none focus:border-ink" /></label><button type="submit" class="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white">Apply date</button><a href="/" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-600">Today</a>
+  </form>
+  <section class="animate-[fade-up_.5s_ease-out]">
+    <div class="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
+      <div class="relative overflow-hidden rounded-[1.75rem] bg-ink p-7 text-white shadow-soft sm:p-9">
+        <div class="absolute -right-10 -top-16 h-56 w-56 rounded-full border-[28px] border-mint/20"></div>
+        <div class="absolute -bottom-24 right-24 h-48 w-48 rounded-full border-[18px] border-coral/20"></div>
+        <div class="relative">
+          <div class="flex items-center justify-between gap-4">
+            <p class="text-sm font-semibold text-slate-300">Total balance</p>
+            <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-mint">Live view</span>
+          </div>
+          <p class="mt-7 font-display text-4xl font-bold tracking-tight sm:text-5xl">€ {{ total_balance|floatformat:2 }}</p>
+          <div class="mt-9 flex items-end justify-between gap-4">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[.16em] text-slate-400">Across {{ accounts|length }} account{{ accounts|length|pluralize }}</p>
+              <div class="mt-3 flex -space-x-2">
+                {% for account in accounts|slice:':4' %}
+                  <span class="grid h-8 w-8 place-items-center rounded-full border-2 border-ink bg-coral text-xs font-bold text-ink">{{ account.name|first|upper }}</span>
+                {% empty %}
+                  <span class="text-sm text-slate-400">Add your first account</span>
+                {% endfor %}
+              </div>
+            </div>
+            <span class="text-right text-sm text-slate-300">Updated just now<br /><span class="text-xs text-slate-500">Your data stays yours</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-[1.75rem] border border-slate-200 bg-white p-7 shadow-soft sm:p-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-slate-500">All activity</p>
+            <p class="mt-2 font-display text-2xl font-bold">Cash flow</p>
+          </div>
+          <span class="grid h-11 w-11 place-items-center rounded-2xl bg-mint text-xl">↗</span>
+        </div>
+        <div class="mt-8 space-y-5">
+          <div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="font-semibold text-slate-500">Income</span><span class="font-bold text-emerald-600">+ € {{ income|floatformat:2 }}</span>
+            </div>
+            <div class="mt-2 h-2 rounded-full bg-slate-100">
+              <div class="h-2 rounded-full bg-emerald-400" style="width: {{ income_share|floatformat:0 }}%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="font-semibold text-slate-500">Expenses</span><span class="font-bold text-coral">- € {{ expenses|floatformat:2 }}</span>
+            </div>
+            <div class="mt-2 h-2 rounded-full bg-slate-100">
+              <div class="h-2 rounded-full bg-coral" style="width: {{ expense_share|floatformat:0 }}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-7 flex items-center justify-between border-t border-slate-100 pt-5">
+          <span class="text-sm text-slate-400">Net position</span><span class="font-bold">€ {{ net_position|floatformat:2 }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-10">
+    <div class="mb-4 flex items-end justify-between gap-4">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[.18em] text-slate-400">Where it lives</p><h2 class="mt-1 font-display text-xl font-bold">Your accounts</h2>
+      </div>
+      <p class="hidden text-sm text-slate-400 sm:block">{{ accounts|length }} account{{ accounts|length|pluralize }} in your workspace</p>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {% for account in accounts %}
+        <div class="rounded-[1.35rem] border-l-4 {% cycle 'border-coral bg-[#fff8f5]' 'border-emerald-400 bg-[#f3fcf6]' 'border-sky-400 bg-[#f3f9fc]' 'border-amber-400 bg-[#fffaf0]' %} p-5 shadow-soft transition hover:-translate-y-1">
+          <div class="flex items-start justify-between gap-3">
+            <span class="grid h-10 w-10 place-items-center rounded-xl bg-white/80 font-display font-bold text-ink">{{ account.name|first|upper }}</span><span class="text-xs font-bold uppercase tracking-[.14em] text-slate-400">Account</span>
+          </div>
+          <p class="mt-7 truncate text-sm font-bold text-slate-500">{{ account.name }}</p>
+          <p class="mt-1 font-display text-2xl font-bold tracking-tight">€ {{ account.display_balance|floatformat:2 }}</p>
+        </div>
+      {% empty %}
+        <div class="rounded-[1.35rem] border border-dashed border-slate-300 bg-white p-6 sm:col-span-2 xl:col-span-4">
+          <p class="font-display font-bold">No accounts yet</p>
+          <p class="mt-1 text-sm text-slate-400">Create an account to start seeing your complete balance here.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section id="categories" class="mt-10 grid scroll-mt-24 gap-8 xl:grid-cols-[1.15fr_.85fr]">
+    <div>
+      <div class="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[.18em] text-slate-400">Spending map</p><h2 class="mt-1 font-display text-xl font-bold">Expenses by category</h2>
+        </div><span class="rounded-full bg-[#fff0eb] px-3 py-1.5 text-xs font-bold text-[#c65d3c]">€ {{ expenses|floatformat:2 }} total</span>
+      </div>
+      <div class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-6">
+        {% for item in category_expenses %}
+          <div class="mb-5 last:mb-0">
+            <div class="mb-2 flex items-center justify-between gap-4 text-sm">
+              <span class="flex min-w-0 items-center gap-2 font-bold"><span class="h-2.5 w-2.5 shrink-0 rounded-full {% cycle 'bg-coral' 'bg-emerald-400' 'bg-sky-400' 'bg-amber-400' 'bg-violet-400' 'bg-rose-400' %}"></span><span class="truncate">{{ item.category_name|default:'Uncategorised' }}</span></span><span class="shrink-0 font-bold text-slate-500">€ {{ item.total|floatformat:2 }}</span>
+            </div>
+            <div class="h-3 rounded-full bg-slate-100">
+              <div class="h-3 rounded-full {% cycle 'bg-coral' 'bg-emerald-400' 'bg-sky-400' 'bg-amber-400' 'bg-violet-400' 'bg-rose-400' %}" style="width: {% widthratio item.total expenses 100 %}%"></div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="py-8 text-center">
+            <span class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#fff0eb] text-xl">◌</span><p class="mt-4 font-display font-bold">No expense breakdown yet</p>
+            <p class="mt-1 text-sm text-slate-400">Categorised expenses will appear here as you add them.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="goals" class="scroll-mt-24">
+      <div class="mb-4">
+        <p class="text-xs font-bold uppercase tracking-[.18em] text-slate-400">More detail</p><h2 class="mt-1 font-display text-xl font-bold">By subcategory</h2>
+      </div>
+      <div class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-soft">
+        {% for item in subcategory_expenses %}
+          <div class="flex items-center gap-3 border-b border-slate-100 px-5 py-4 last:border-0">
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl {% cycle 'bg-mint' 'bg-[#fff0eb]' 'bg-sky-100' 'bg-amber-100' %} text-sm font-bold">{{ item.subcategory_name|first|upper|default:'?' }}</span><span class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-600">{{ item.subcategory_name|default:'Uncategorised' }}</span><span class="text-sm font-bold">€ {{ item.total|floatformat:2 }}</span>
+          </div>
+        {% empty %}
+          <div class="p-6 text-center">
+            <p class="font-display font-bold">No subcategories yet</p>
+            <p class="mt-1 text-sm text-slate-400">Use subcategories to find the patterns behind each category.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section id="transactions" class="mt-10 grid scroll-mt-24 gap-8 xl:grid-cols-[1.5fr_1fr]">
+    <div>
+      <div class="mb-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[.18em] text-slate-400">Activity</p><h2 class="mt-1 font-display text-xl font-bold">Recent transactions</h2>
+        </div><a href="/finance/transactions/" class="text-sm font-bold text-ink underline decoration-coral decoration-2 underline-offset-4">View all</a>
+      </div>
+      <div class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-soft">
+        {% for transaction in recent_transactions %}
+          <div class="flex items-center gap-4 border-b border-slate-100 px-5 py-4 last:border-0 sm:px-6">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl {% if transaction.type == 'income' %}
+                
+                bg-mint
+
+              {% else %}
+                
+                bg-[#fff0eb]
+
+              {% endif %} text-lg">
+              {% if transaction.type == 'income' %}
+                ↗
+              {% else %}
+                ↘
+              {% endif %}
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-bold">{{ transaction.title|default:'Untitled transaction' }}</p>
+              <p class="mt-1 truncate text-xs text-slate-400">{{ transaction.category|default:'Uncategorised' }} · {{ transaction.account.name }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-bold {% if transaction.type == 'income' %}
+                  
+                  text-emerald-600
+
+                {% else %}
+                  
+                  text-ink
+
+                {% endif %}">
+                {% if transaction.type == 'income' %}
+                  +
+                {% else %}
+                  -
+                {% endif %}€ {{ transaction.amount|floatformat:2 }}
+              </p>
+              <p class="mt-1 text-xs text-slate-400">{{ transaction.transaction_date|date:'d M' }}</p>
+            </div>
+          </div>
+        {% empty %}
+          <div class="px-6 py-12 text-center">
+            <span class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-mint text-xl">✦</span><p class="mt-4 font-display font-bold">Your story starts here</p>
+            <p class="mt-1 text-sm text-slate-400">Add a transaction to see your rhythm take shape.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <div class="mb-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[.18em] text-slate-400">Momentum</p><h2 class="mt-1 font-display text-xl font-bold">Savings goals</h2>
+        </div><a href="#goals" class="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-lg font-bold hover:bg-slate-50" aria-label="Add savings goal">+</a>
+      </div>
+      <div class="space-y-3">
+        {% for goal in savings_goals %}
+          <div class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="font-bold">{{ goal.name }}</p>
+                <p class="mt-1 text-xs text-slate-400">{{ goal.account.name }}</p>
+              </div><span class="text-sm font-bold text-ink">{% widthratio goal.account.balance goal.target_amount 100 %}%</span>
+            </div>
+            <div class="mt-5 h-2 rounded-full bg-slate-100">
+              <div class="h-2 rounded-full bg-coral" style="width: {% widthratio goal.account.balance goal.target_amount 100 %}%"></div>
+            </div>
+            <p class="mt-3 text-xs text-slate-400">€ {{ goal.account.balance|floatformat:2 }} of € {{ goal.target_amount|floatformat:2 }}</p>
+          </div>
+        {% empty %}
+          <div class="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/60 p-6">
+            <p class="font-display font-bold">Give a future plan a name.</p>
+            <p class="mt-2 text-sm leading-6 text-slate-400">Savings goals turn intention into something you can see.</p><a href="#goals" class="mt-5 inline-flex rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white">Create a goal</a>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts{% endblock %}
+{% block eyebrow %}Where your money lives{% endblock %}
+{% block page_heading %}Accounts{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-6xl">
+  {% include "finance/_messages.html" %}
+  <div class="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p class="text-sm text-slate-500">Keep balances and places easy to scan.</p><h2 class="mt-2 font-display text-3xl font-bold tracking-tight">Your accounts.</h2></div><span class="rounded-full bg-mint px-3 py-1.5 text-xs font-bold text-ink">{{ accounts|length }} account{{ accounts|length|pluralize }}</span></div>
+  <div class="grid gap-8 lg:grid-cols-[1.35fr_.65fr]">
+    <div class="grid gap-4 sm:grid-cols-2">
+      {% for account in accounts %}
+      <article class="relative overflow-hidden rounded-[1.5rem] border-l-4 {% cycle 'border-coral bg-[#fff8f5]' 'border-emerald-400 bg-[#f3fcf6]' 'border-sky-400 bg-[#f3f9fc]' 'border-amber-400 bg-[#fffaf0]' %} p-6 shadow-soft"><div class="flex items-start justify-between"><span class="grid h-11 w-11 place-items-center rounded-2xl bg-white/80 font-display text-lg font-bold">{{ account.name|first|upper }}</span><span class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Active</span></div><h3 class="mt-8 font-display text-lg font-bold">{{ account.name }}</h3><p class="mt-2 font-display text-3xl font-bold">€ {{ account.balance|floatformat:2 }}</p><p class="mt-3 text-xs text-slate-500">Updated with every transaction</p></article>
+      {% empty %}<div class="rounded-[1.5rem] border border-dashed border-slate-300 bg-white p-8 sm:col-span-2"><h3 class="font-display text-xl font-bold">Your first account starts here.</h3><p class="mt-2 text-sm text-slate-500">Add a bank account, wallet or card below.</p></div>{% endfor %}
+    </div>
+    <section class="h-fit rounded-[1.5rem] bg-ink p-6 text-white shadow-soft"><p class="text-xs font-bold uppercase tracking-[.16em] text-mint">New account</p><h2 class="mt-3 font-display text-xl font-bold">Add a place for money.</h2><form method="post" class="mt-6 space-y-4">{% csrf_token %}<label class="block"><span class="mb-2 block text-sm font-bold text-slate-300">Name</span><input name="name" required placeholder="e.g. Main bank" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-mint"></label><label class="block"><span class="mb-2 block text-sm font-bold text-slate-300">Opening balance</span><input name="balance" type="number" min="0" step="0.01" value="0.00" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-mint"></label><button type="submit" class="w-full rounded-xl bg-mint px-4 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5">Create account</button></form></section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Savings goals{% endblock %}
+{% block eyebrow %}Make room for the future{% endblock %}
+{% block page_heading %}Savings goals{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-6xl">
+    {% include 'finance/_messages.html' %}
+    <div class="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+      <div>
+        <p class="text-sm" style="color: #475569;">Turn a number into something you can see.</p><h2 class="mt-2 font-display text-3xl font-bold tracking-tight" style="color: #16324f;">Plans worth keeping.</h2>
+      </div><span class="rounded-full px-3 py-1.5 text-xs font-bold" style="background: #dcefe6; color: #16324f;">{{ goals|length }} goal{{ goals|length|pluralize }}</span>
+    </div>
+    <div class="grid gap-8 lg:grid-cols-[1.3fr_.7fr]">
+      <section class="grid gap-4 sm:grid-cols-2">
+        {% for goal in goals %}
+          <article class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-soft" style="color: #16324f;">
+            <div class="flex items-start justify-between gap-4">
+              <span class="grid h-11 w-11 place-items-center rounded-2xl text-xl" style="background: #dcefe6;">✦</span><span class="font-display text-2xl font-bold">{% widthratio goal.account.balance goal.target_amount 100 %}%</span>
+            </div><h3 class="mt-7 font-display text-lg font-bold">{{ goal.name }}</h3><p class="mt-1 text-sm" style="color: #475569;">{{ goal.account.name }}</p>
+            <div class="mt-6 h-3 rounded-full" style="background: #e7edf2;">
+              <div class="h-3 rounded-full" style="width: {% widthratio goal.account.balance goal.target_amount 100 %}%; {% if goal.account.balance %}min-width: 10px;{% endif %} background: #2f9eaa;"></div>
+            </div>
+            <div class="mt-4 flex justify-between text-sm">
+              <span class="font-bold">€ {{ goal.account.balance|floatformat:2 }}</span><span style="color: #475569;">of € {{ goal.target_amount|floatformat:2 }}</span>
+            </div>
+          </article>
+        {% empty %}
+          <div class="rounded-[1.5rem] border border-dashed border-slate-300 bg-white p-8 sm:col-span-2">
+            <h3 class="font-display text-xl font-bold">No goals yet.</h3><p class="mt-2 text-sm" style="color: #475569;">Give your next plan a name and a finish line.</p>
+          </div>
+        {% endfor %}
+      </section>
+      <section class="h-fit rounded-[1.5rem] p-6 text-white shadow-soft" style="background: #16324f;">
+        <p class="text-xs font-bold uppercase tracking-[.16em]" style="color: #dcefe6;">New goal</p><h2 class="mt-3 font-display text-xl font-bold">Name the next milestone.</h2><form method="post" class="mt-6 space-y-4">
+          {% csrf_token %}<label class="block"><span class="mb-2 block text-sm font-bold" style="color: #d9e2ec;">Goal name</span><input name="name" required placeholder="e.g. Emergency fund" class="w-full rounded-xl border px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-mint" style="background: #243b53; border-color: #486581;" /></label><label class="block"><span class="mb-2 block text-sm font-bold" style="color: #d9e2ec;">Target amount</span><input name="target_amount" type="number" min="0.01" step="0.01" required placeholder="5000.00" class="w-full rounded-xl border px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-mint" style="background: #243b53; border-color: #486581;" /></label><label class="block">
+            <span class="mb-2 block text-sm font-bold" style="color: #d9e2ec;">Account</span><select name="account" required class="w-full rounded-xl border px-4 py-3 text-sm text-white outline-none focus:border-mint" style="background: #243b53; border-color: #486581;">
+              <option value="" style="color: #16324f;">Choose account</option>
+              {% for account in accounts %}
+                <option value="{{ account.id }}" style="color: #16324f;">{{ account.name }}</option>
+              {% endfor %}
+            </select>
+          </label><button type="submit" class="w-full rounded-xl px-4 py-3 text-sm font-bold" style="background: #dcefe6; color: #16324f;">Create goal</button>
+        </form>
+      </section>
+    </div>
+  </div>
+{% endblock %}
