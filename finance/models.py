@@ -302,3 +302,86 @@ class SavingsGoal(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Budget(models.Model):
+    PERIOD_CHOICES = [
+        ("custom", "Custom"),
+        ("weekly", "Weekly"),
+        ("monthly", "Monthly"),
+        ("yearly", "Yearly"),
+    ]
+
+    owner = models.ForeignKey(
+        "accounts.CustomUser", on_delete=models.CASCADE, related_name="budgets"
+    )
+    name = models.CharField(max_length=100)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    period = models.CharField(max_length=10, choices=PERIOD_CHOICES, default="monthly")
+    start_date = models.DateField(default=timezone.localdate)
+    end_date = models.DateField(null=True, blank=True)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="budgets",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-start_date", "name"]
+
+    def __str__(self):
+        return self.name
+
+
+class BudgetCategoryLimit(models.Model):
+    budget = models.ForeignKey(
+        Budget, on_delete=models.CASCADE, related_name="category_limits"
+    )
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["budget", "category"], name="unique_budget_category_limit"
+            )
+        ]
+
+
+class RecurringTransaction(models.Model):
+    FREQUENCY_CHOICES = [
+        ("weekly", "Weekly"),
+        ("monthly", "Monthly"),
+        ("yearly", "Yearly"),
+    ]
+
+    account = models.ForeignKey(
+        Account, on_delete=models.CASCADE, related_name="recurring_transactions"
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    type = models.CharField(
+        max_length=10,
+        choices=[("income", "Income"), ("expense", "Expense")],
+        default="expense",
+    )
+    title = models.CharField(max_length=100)
+    category = models.ForeignKey(
+        Category, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    subcategory = models.ForeignKey(
+        SubCategory, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    frequency = models.CharField(max_length=10, choices=FREQUENCY_CHOICES)
+    next_date = models.DateField(default=timezone.localdate)
+    end_date = models.DateField(null=True, blank=True)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["active", "next_date", "title"]
+
+    def __str__(self):
+        return self.title
