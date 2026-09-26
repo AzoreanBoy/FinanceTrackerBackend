@@ -275,6 +275,10 @@ def accounts_page(request):
     accounts = Account.objects.filter(owner=request.user).order_by("name")
     return render(request, "finance/accounts.html", {"accounts": accounts})
 
+@login_required
+def accounts_details(request, account_id):
+    account = get_object_or_404(Account, pk=account_id, owner=request.user)
+    return render(request, "finance/account_page.html", {"account": account})
 
 @login_required
 def categories_page(request):

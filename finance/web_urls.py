@@ -9,6 +9,7 @@ from .web_views import (
     goals_page,
     recurring_page,
     transaction_list,
+    accounts_details,
 )
 
 app_name = "finance_web"
@@ -22,4 +23,5 @@ urlpatterns = [
     path("finance/categories/", categories_page, name="categories"),
     path("finance/goals/", goals_page, name="goals"),
     path("finance/transactions/", transaction_list, name="transactions"),
+    path("finance/accounts/<int:account_id>/", accounts_details, name="accounts_details"),
 ]
