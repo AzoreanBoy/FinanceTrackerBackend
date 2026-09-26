@@ -19,6 +19,8 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.authtoken.views import obtain_auth_token
 
+from django.views.generic import TemplateView
+
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -48,4 +50,11 @@ urlpatterns = [
     path("api/auth/token/", obtain_auth_token),
     path("api/accounts/", include("accounts.urls")),
     path("api/finance/", include("finance.urls")),
+    
+    
+    # Testing endpoints
+    path("test-400/", TemplateView.as_view(template_name="400.html")),
+    path("test-403/", TemplateView.as_view(template_name="403.html")),
+    path("test-404/", TemplateView.as_view(template_name="404.html")),
+    path("test-500/", TemplateView.as_view(template_name="500.html")),
 ]
