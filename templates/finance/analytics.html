@@ -14,7 +14,38 @@
     <a href="{% url 'finance_web:transaction_create' %}" class="inline-flex min-h-12 items-center justify-center rounded-xl bg-coral px-5 py-3 text-sm font-bold text-ink shadow-soft">+ Add transaction</a>
   </header>
 
+  <section class="grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:grid-cols-[1fr_auto] sm:items-center" aria-label="Pay cycle settings">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Your pay cycle</p>
+      <p class="mt-1 text-sm leading-6 text-slate-700">Cycles start on payday and end the day before your next payday. Weekends and Portugal mainland national holidays move payday to the previous working day.</p>
+    </div>
+    <form method="post" class="flex items-end gap-2">
+      {% csrf_token %}<input type="hidden" name="action" value="payday">
+      <label><span class="mb-1 block text-xs font-semibold text-slate-600">Usual payday</span><input type="number" name="payday_day" min="1" max="31" value="{{ payday_day }}" required class="w-24 rounded-xl border border-slate-300 bg-mist px-3 py-2.5 text-sm font-bold"></label>
+      <button type="submit" class="min-h-11 rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">Save day</button>
+    </form>
+  </section>
+
+  {% if period_mode == "pay_cycle" %}
+  <nav class="flex items-center justify-between gap-3 rounded-2xl bg-mist p-3" aria-label="Pay cycle navigation">
+    <a href="?period=pay_cycle&amp;cycle_start={{ previous_cycle_start|date:'Y-m-d' }}&amp;account={{ selected_account }}&amp;category={{ selected_category }}" class="inline-flex min-h-10 items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-bold text-ink shadow-sm"><span aria-hidden="true">←</span><span class="hidden sm:inline">Previous cycle</span></a>
+    <p class="text-center text-sm font-bold text-ink">Pay cycle · {{ cycle_start|date:'d M' }} – {{ cycle_end|date:'d M Y' }}{% if cycle_start == current_cycle_start %}<span class="ml-1 text-xs font-medium text-slate-600">(current)</span>{% endif %}</p>
+    {% if cycle_start < current_cycle_start %}
+    <a href="?period=pay_cycle&amp;cycle_start={{ next_cycle_start|date:'Y-m-d' }}&amp;account={{ selected_account }}&amp;category={{ selected_category }}" class="inline-flex min-h-10 items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-bold text-ink shadow-sm"><span class="hidden sm:inline">Next cycle</span><span aria-hidden="true">→</span></a>
+    {% else %}
+    <span class="inline-flex min-h-10 items-center rounded-xl px-3 py-2 text-sm font-semibold text-slate-400" aria-disabled="true">Next cycle <span class="ml-1" aria-hidden="true">→</span></span>
+    {% endif %}
+  </nav>
+  {% endif %}
+
   <form method="get" class="grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:grid-cols-2 lg:grid-cols-4 lg:items-end" aria-label="Filter analytics">
+    <label>
+      <span class="mb-2 block text-xs font-bold uppercase tracking-[.14em] text-slate-600">Analysis period</span>
+      <select name="period" class="w-full rounded-xl border border-slate-300 bg-mist px-3 py-3 text-sm font-semibold text-ink focus:border-ink">
+        <option value="pay_cycle" {% if period_mode == "pay_cycle" %}selected{% endif %}>My pay cycle</option>
+        <option value="custom" {% if period_mode == "custom" %}selected{% endif %}>Custom dates</option>
+      </select>
+    </label>
     <label>
       <span class="mb-2 block text-xs font-bold uppercase tracking-[.14em] text-slate-600">From</span>
       <input type="date" name="start" value="{{ start_date|date:'Y-m-d' }}" class="w-full rounded-xl border border-slate-300 bg-mist px-3 py-3 text-sm font-semibold text-ink focus:border-ink">
@@ -41,6 +72,7 @@
       <button type="submit" class="min-h-12 rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-ink/90">Update analysis</button>
     </div>
   </form>
+  <p class="-mt-6 px-2 text-xs text-slate-500">Choose “Custom dates” to use the From and To fields. Pay-cycle analysis follows your saved payday.</p>
 
   <section aria-label="Selected period summary">
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -67,6 +99,41 @@
     </div>
     <p class="mt-3 text-xs text-slate-600">Amounts shown in {{ reporting_currency }} using your dated exchange rates. Transactions without an available rate are excluded rather than estimated.</p>
     {% if unconverted_transaction_count %}<p class="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">{{ unconverted_transaction_count }} transaction{{ unconverted_transaction_count|pluralize }} could not be converted ({{ unconverted_currencies|join:", " }}); add rates on the Currencies page to include them.</p>{% endif %}
+  </section>
+
+  <section class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7" aria-labelledby="spending-pie-heading">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Expense composition</p>
+      <h2 id="spending-pie-heading" class="mt-1 font-display text-xl font-bold">Where this cycle’s spending went</h2>
+      <p class="mt-1 text-sm text-slate-600">{{ start_date|date:'d M Y' }} – {{ end_date|date:'d M Y' }} · {{ reporting_currency }} {{ total_expenses|floatformat:2 }} in expenses</p>
+    </div>
+    <div class="mt-6 grid gap-8 lg:grid-cols-2">
+      {% for chart in pie_charts %}
+      <section class="rounded-2xl bg-mist/70 p-4 sm:p-5" aria-labelledby="{{ chart.id }}-heading">
+        <h3 id="{{ chart.id }}-heading" class="font-display text-lg font-bold">{{ chart.title }}</h3>
+        <div class="mt-5 grid items-center gap-5 sm:grid-cols-[minmax(10rem,.8fr)_1.2fr]">
+          <div class="relative mx-auto aspect-square w-full max-w-[13rem] rounded-full" role="img" aria-label="{{ chart.title }}: {{ chart.description }}" style="background: {{ chart.gradient }}">
+            <div class="absolute inset-[24%] grid place-content-center rounded-full bg-white text-center shadow-inner">
+              <span class="text-[10px] font-bold uppercase tracking-wide text-slate-500">Total</span>
+              <span class="mt-1 px-1 text-sm font-bold text-ink">{{ reporting_currency }} {{ total_expenses|floatformat:0 }}</span>
+            </div>
+          </div>
+          <ul class="space-y-2" aria-label="{{ chart.title }} legend">
+            {% for item in chart.items|slice:':8' %}
+            <li class="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm">
+              <span class="flex min-w-0 items-center gap-2"><span class="h-3 w-3 shrink-0 rounded-sm" style="background-color: {{ item.color }}" aria-hidden="true"></span><span class="truncate font-semibold">{{ item.name }}</span></span>
+              <span class="shrink-0 text-right text-xs font-semibold text-slate-600">{{ item.share|floatformat:1 }}%<span class="block">{{ reporting_currency }} {{ item.total|floatformat:2 }}</span></span>
+            </li>
+            {% empty %}
+            <li class="py-8 text-center text-sm text-slate-600">No expenses to chart in this period.</li>
+            {% endfor %}
+            {% if chart.items|length > 8 %}<li class="px-3 text-xs text-slate-500">Showing the top 8 of {{ chart.items|length }} entries; the chart includes all of them.</li>{% endif %}
+          </ul>
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+    <p class="mt-4 text-xs text-slate-500">Pie charts include converted expenses only. Transactions without an available dated exchange rate remain excluded, as shown above.</p>
   </section>
 
   <section class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7" aria-labelledby="comparison-heading">

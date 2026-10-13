@@ -2,6 +2,7 @@ import csv
 from datetime import date, timedelta
 from decimal import Decimal
 from io import StringIO
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -10,7 +11,12 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from .analytics import budget_cycle_bounds, build_expense_analytics
+from .analytics import (
+    adjusted_payday,
+    budget_cycle_bounds,
+    build_expense_analytics,
+    pay_cycle_for_date,
+)
 from .models import (
     Account,
     BalanceCorrection,
@@ -25,6 +31,7 @@ from .models import (
     Tag,
     Transaction,
     Transfer,
+    UserFinanceSettings,
 )
 from .currencies import convert_amount
 from .recurring import process_due_recurring_transactions
@@ -763,6 +770,20 @@ class FinanceAnalyticsTests(TestCase):
             type="expense",
         )
 
+    def test_payday_is_moved_to_previous_workday_for_weekends_and_mainland_holidays(self):
+        self.assertEqual(adjusted_payday(2026, 10, 25), date(2026, 10, 23))
+        self.assertEqual(adjusted_payday(2025, 4, 25), date(2025, 4, 24))
+        self.assertEqual(adjusted_payday(2025, 4, 18), date(2025, 4, 17))
+
+    def test_pay_cycle_starts_on_adjusted_payday_and_ends_before_next_payday(self):
+        start, end, next_payday = pay_cycle_for_date(
+            date(2025, 1, 26), payday_day=25
+        )
+
+        self.assertEqual(start, date(2025, 1, 24))
+        self.assertEqual(end, date(2025, 2, 24))
+        self.assertEqual(next_payday, date(2025, 2, 25))
+
     def test_monthly_budget_cycle_preserves_month_end_anchor(self):
         budget = Budget.objects.create(
             owner=self.user,
@@ -1014,6 +1035,114 @@ class FinanceAnalyticsTests(TestCase):
         self.assertContains(response, "Savings rate")
         self.assertContains(response, "EUR 1200.00")
         self.assertContains(response, "EUR 750.00")
+
+    def test_analytics_page_uses_configured_pay_cycle_by_default(self):
+        settings, _ = UserFinanceSettings.objects.get_or_create(owner=self.user)
+        settings.payday_day = 25
+        settings.save(update_fields=["payday_day"])
+        self.client.force_login(self.user)
+
+        with patch("finance.web_views.timezone.localdate", return_value=date(2025, 1, 26)):
+            response = self.client.get(reverse("finance_web:analytics"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["period_mode"], "pay_cycle")
+        self.assertEqual(response.context["cycle_start"], date(2025, 1, 24))
+        self.assertEqual(response.context["cycle_end"], date(2025, 2, 24))
+        self.assertEqual(response.context["start_date"], date(2025, 1, 24))
+        self.assertEqual(response.context["end_date"], date(2025, 1, 26))
+        self.assertContains(response, "Portugal mainland national holidays")
+
+    def test_pay_cycle_comparison_uses_matching_dates_from_previous_cycle(self):
+        settings, _ = UserFinanceSettings.objects.get_or_create(owner=self.user)
+        settings.payday_day = 25
+        settings.save(update_fields=["payday_day"])
+        Transaction.objects.create(
+            account=self.account,
+            amount=Decimal("40.00"),
+            type="expense",
+            title="Previous cycle expense",
+            transaction_date=date(2024, 12, 25),
+        )
+        Transaction.objects.create(
+            account=self.account,
+            amount=Decimal("500.00"),
+            type="expense",
+            title="Outside comparable dates",
+            transaction_date=date(2024, 12, 27),
+        )
+        Transaction.objects.create(
+            account=self.account,
+            amount=Decimal("20.00"),
+            type="expense",
+            title="Current cycle expense",
+            transaction_date=date(2025, 1, 25),
+        )
+        self.client.force_login(self.user)
+
+        with patch("finance.web_views.timezone.localdate", return_value=date(2025, 1, 26)):
+            response = self.client.get(reverse("finance_web:analytics"))
+
+        comparison = response.context["period_comparison"]
+        self.assertEqual(comparison["previous_start"], date(2024, 12, 24))
+        self.assertEqual(comparison["previous_end"], date(2024, 12, 26))
+        self.assertEqual(comparison["previous_expenses"], Decimal("40.00"))
+
+    def test_payday_preference_can_be_saved_with_validation(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("finance_web:analytics"),
+            {"action": "payday", "payday_day": "25"},
+        )
+
+        settings = UserFinanceSettings.objects.get(owner=self.user)
+        self.assertRedirects(response, reverse("finance_web:analytics"))
+        self.assertEqual(settings.payday_day, 25)
+
+        self.client.post(
+            reverse("finance_web:analytics"),
+            {"action": "payday", "payday_day": "32"},
+        )
+        settings.refresh_from_db()
+        self.assertEqual(settings.payday_day, 25)
+
+    def test_analytics_page_renders_category_and_subcategory_pie_charts(self):
+        subcategory = SubCategory.objects.create(
+            owner=self.user,
+            name="Groceries",
+            category=self.food,
+        )
+        Transaction.objects.create(
+            account=self.account,
+            amount=Decimal("75.00"),
+            type="expense",
+            title="Market",
+            category=self.food,
+            subcategory=subcategory,
+            transaction_date=date(2025, 1, 10),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("finance_web:analytics"),
+            {
+                "period": "custom",
+                "start": "2025-01-01",
+                "end": "2025-01-31",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["pie_charts"]), 2)
+        self.assertEqual(
+            response.context["pie_charts"][0]["items"][0]["name"], "Food"
+        )
+        self.assertEqual(
+            response.context["pie_charts"][1]["items"][0]["name"], "Groceries"
+        )
+        self.assertContains(response, "Where this cycle’s spending went")
+        self.assertContains(response, "conic-gradient(")
 
     def test_analytics_page_displays_budget_progress(self):
         Budget.objects.create(

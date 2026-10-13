@@ -508,6 +508,7 @@ def analytics_page(request):
         )
 
     cycle_start = cycle_end = previous_cycle_start = next_cycle_start = None
+    previous_period = None
     if period_mode == "pay_cycle":
         current_cycle_start, _, _ = pay_cycle_for_date(
             today, finance_settings.payday_day
@@ -530,11 +531,19 @@ def analytics_page(request):
         cycle_start, cycle_end, next_cycle_start = pay_cycle_for_date(
             cycle_start, finance_settings.payday_day
         )
-        previous_cycle_start, _, _ = pay_cycle_for_date(
+        previous_cycle_start, previous_cycle_end, _ = pay_cycle_for_date(
             cycle_start - timedelta(days=1), finance_settings.payday_day
         )
         start_date = cycle_start
         end_date = min(cycle_end, today) if cycle_start == current_cycle_start else cycle_end
+        previous_end = previous_cycle_end
+        if cycle_start == current_cycle_start:
+            elapsed_days = (end_date - start_date).days
+            previous_end = min(
+                previous_cycle_end,
+                previous_cycle_start + timedelta(days=elapsed_days),
+            )
+        previous_period = (previous_cycle_start, previous_end)
     else:
         default_start = shift_month(today.replace(day=1), -5)
         try:
@@ -554,6 +563,7 @@ def analytics_page(request):
         end_date,
         account_id=account_id,
         category_id=category_id,
+        previous_period=previous_period,
     )
     return render(
         request,
@@ -577,6 +587,22 @@ def analytics_page(request):
                 if period_mode == "pay_cycle"
                 else None
             ),
+            "pie_charts": [
+                {
+                    "id": "category-pie",
+                    "title": "By category",
+                    "description": "expenses split by category",
+                    "gradient": analytics["category_pie_gradient"],
+                    "items": analytics["categories"],
+                },
+                {
+                    "id": "subcategory-pie",
+                    "title": "By subcategory",
+                    "description": "expenses split by subcategory",
+                    "gradient": analytics["subcategory_pie_gradient"],
+                    "items": analytics["subcategories"],
+                },
+            ],
         },
     )
 

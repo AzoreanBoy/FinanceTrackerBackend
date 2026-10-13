@@ -297,7 +297,14 @@ def _build_budget_comparison(
     return sorted(results, key=lambda item: item["progress"], reverse=True)
 
 
-def build_expense_analytics(user, start_date, end_date, account_id=None, category_id=None):
+def build_expense_analytics(
+    user,
+    start_date,
+    end_date,
+    account_id=None,
+    category_id=None,
+    previous_period=None,
+):
     months = month_range(start_date, end_date)
     finance_settings = UserFinanceSettings.objects.filter(owner=user).first()
     reporting_currency = (
@@ -497,6 +504,7 @@ def build_expense_analytics(user, start_date, end_date, account_id=None, categor
             net_cash_flow,
             rates,
             reporting_currency,
+            previous_period,
         ),
         "budget_comparison": _build_budget_comparison(
             user,
@@ -521,10 +529,14 @@ def _build_period_comparison(
     net_cash_flow,
     rates,
     reporting_currency,
+    previous_period=None,
 ):
     period_length = (end_date - start_date).days + 1
-    previous_start = start_date - timedelta(days=period_length)
-    previous_end = start_date - timedelta(days=1)
+    if previous_period:
+        previous_start, previous_end = previous_period
+    else:
+        previous_start = start_date - timedelta(days=period_length)
+        previous_end = start_date - timedelta(days=1)
     previous_queryset = Transaction.objects.filter(
         account__owner=user,
         transaction_date__range=(previous_start, previous_end),
