@@ -1,21 +1,249 @@
 {% extends "base.html" %}
 
 {% block title %}Analytics{% endblock %}
-{% block eyebrow %}Patterns in your spending{% endblock %}
+{% block eyebrow %}Patterns in your finances{% endblock %}
 {% block page_heading %}Analytics{% endblock %}
 
 {% block content %}
-<div class="mx-auto max-w-7xl">
-  <div class="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><p class="text-sm text-slate-500">Understand where money goes and how that changes over time.</p><h2 class="mt-2 font-display text-3xl font-bold tracking-tight">Your spending patterns.</h2></div><a href="/finance/transactions/#new-transaction" class="inline-flex items-center justify-center rounded-xl bg-coral px-4 py-3 text-sm font-bold text-ink shadow-soft">+ Add transaction</a></div>
+<div class="mx-auto max-w-7xl space-y-8">
+  <header class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+    <div>
+      <p class="text-sm text-slate-600">A clearer view of income, spending and what changes over time.</p>
+      <h2 class="mt-2 font-display text-3xl font-bold tracking-tight">Your money, in context.</h2>
+    </div>
+    <a href="{% url 'finance_web:transaction_create' %}" class="inline-flex min-h-12 items-center justify-center rounded-xl bg-coral px-5 py-3 text-sm font-bold text-ink shadow-soft">+ Add transaction</a>
+  </header>
 
-  <form method="get" class="mb-8 grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:grid-cols-2 lg:grid-cols-4 lg:items-end"><label><span class="mb-2 block text-xs font-bold uppercase tracking-[.16em] text-slate-500">From</span><input type="date" name="start" value="{{ start_date|date:'Y-m-d' }}" class="w-full rounded-xl border border-slate-200 bg-mist px-3 py-3 text-sm font-semibold text-ink outline-none focus:border-ink"></label><label><span class="mb-2 block text-xs font-bold uppercase tracking-[.16em] text-slate-500">To</span><input type="date" name="end" value="{{ end_date|date:'Y-m-d' }}" class="w-full rounded-xl border border-slate-200 bg-mist px-3 py-3 text-sm font-semibold text-ink outline-none focus:border-ink"></label><label><span class="mb-2 block text-xs font-bold uppercase tracking-[.16em] text-slate-500">Account</span><select name="account" class="w-full rounded-xl border border-slate-200 bg-mist px-3 py-3 text-sm font-semibold text-ink outline-none focus:border-ink"><option value="">All accounts</option>{% for account in accounts %}<option value="{{ account.id }}" {% if selected_account == account.id|stringformat:'s' %}selected{% endif %}>{{ account.name }}</option>{% endfor %}</select></label><label><span class="mb-2 block text-xs font-bold uppercase tracking-[.16em] text-slate-500">Category</span><select name="category" class="w-full rounded-xl border border-slate-200 bg-mist px-3 py-3 text-sm font-semibold text-ink outline-none focus:border-ink"><option value="">All categories</option>{% for category in category_options %}<option value="{{ category.id }}" {% if selected_category == category.id|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label><div class="sm:col-span-2 lg:col-span-4 flex justify-end"><button type="submit" class="rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white">Update analysis</button></div></form>
+  <form method="get" class="grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:grid-cols-2 lg:grid-cols-4 lg:items-end" aria-label="Filter analytics">
+    <label>
+      <span class="mb-2 block text-xs font-bold uppercase tracking-[.14em] text-slate-600">From</span>
+      <input type="date" name="start" value="{{ start_date|date:'Y-m-d' }}" class="w-full rounded-xl border border-slate-300 bg-mist px-3 py-3 text-sm font-semibold text-ink focus:border-ink">
+    </label>
+    <label>
+      <span class="mb-2 block text-xs font-bold uppercase tracking-[.14em] text-slate-600">To</span>
+      <input type="date" name="end" value="{{ end_date|date:'Y-m-d' }}" class="w-full rounded-xl border border-slate-300 bg-mist px-3 py-3 text-sm font-semibold text-ink focus:border-ink">
+    </label>
+    <label>
+      <span class="mb-2 block text-xs font-bold uppercase tracking-[.14em] text-slate-600">Account</span>
+      <select name="account" class="w-full rounded-xl border border-slate-300 bg-mist px-3 py-3 text-sm font-semibold text-ink focus:border-ink">
+        <option value="">All accounts</option>
+        {% for account in accounts %}<option value="{{ account.id }}" {% if selected_account == account.id|stringformat:'s' %}selected{% endif %}>{{ account.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>
+      <span class="mb-2 block text-xs font-bold uppercase tracking-[.14em] text-slate-600">Category</span>
+      <select name="category" class="w-full rounded-xl border border-slate-300 bg-mist px-3 py-3 text-sm font-semibold text-ink focus:border-ink">
+        <option value="">All categories</option>
+        {% for category in category_options %}<option value="{{ category.id }}" {% if selected_category == category.id|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <div class="sm:col-span-2 lg:col-span-4 flex justify-end">
+      <button type="submit" class="min-h-12 rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-ink/90">Update analysis</button>
+    </div>
+  </form>
 
-  <section class="grid gap-4 sm:grid-cols-3"><div class="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft"><p class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Total expenses</p><p class="mt-3 font-display text-3xl font-bold">€ {{ total_expenses|floatformat:2 }}</p></div><div class="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft"><p class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Monthly average</p><p class="mt-3 font-display text-3xl font-bold">€ {{ average_monthly|floatformat:2 }}</p></div><div class="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft"><p class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Transactions</p><p class="mt-3 font-display text-3xl font-bold">{{ transaction_count }}</p></div></section>
+  <section aria-label="Selected period summary">
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <article class="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft">
+        <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Income</p>
+        <p class="mt-3 font-display text-2xl font-bold sm:text-3xl">{{ reporting_currency }} {{ total_income|floatformat:2 }}</p>
+        <p class="mt-2 text-sm text-slate-600">{{ income_transaction_count }} transactions</p>
+      </article>
+      <article class="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft">
+        <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Expenses</p>
+        <p class="mt-3 font-display text-2xl font-bold sm:text-3xl">{{ reporting_currency }} {{ total_expenses|floatformat:2 }}</p>
+        <p class="mt-2 text-sm text-slate-600">{{ transaction_count }} transactions</p>
+      </article>
+      <article class="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft">
+        <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Net cash flow</p>
+        <p class="mt-3 font-display text-2xl font-bold sm:text-3xl">{{ reporting_currency }} {{ net_cash_flow|floatformat:2 }}</p>
+        <p class="mt-2 text-sm text-slate-600">Income minus expenses</p>
+      </article>
+      <article class="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft">
+        <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Savings rate</p>
+        <p class="mt-3 font-display text-2xl font-bold sm:text-3xl">{{ savings_rate|floatformat:1 }}%</p>
+        <p class="mt-2 text-sm text-slate-600">Net cash flow as a share of income</p>
+      </article>
+    </div>
+    <p class="mt-3 text-xs text-slate-600">Amounts shown in {{ reporting_currency }} using your dated exchange rates. Transactions without an available rate are excluded rather than estimated.</p>
+    {% if unconverted_transaction_count %}<p class="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">{{ unconverted_transaction_count }} transaction{{ unconverted_transaction_count|pluralize }} could not be converted ({{ unconverted_currencies|join:", " }}); add rates on the Currencies page to include them.</p>{% endif %}
+  </section>
 
-  <section class="mt-8 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7"><div class="flex items-end justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Timeline</p><h2 class="mt-1 font-display text-xl font-bold">Expenses by month</h2></div><span class="text-xs font-semibold text-slate-500">{{ start_date|date:'d M Y' }} — {{ end_date|date:'d M Y' }}</span></div><div class="mt-8 grid min-h-56 grid-cols-{{ months|length }} items-end gap-2 sm:gap-4">{% for month in months %}<div class="flex h-56 min-w-0 flex-col items-center justify-end gap-3"><div class="w-full max-w-12 rounded-t-lg bg-coral/80 transition" style="height: {% if month.total %}max(8px, {{ month.bar|floatformat:0 }}%){% else %}3px{% endif %};" title="€ {{ month.total|floatformat:2 }}"></div><span class="truncate text-[10px] font-bold text-slate-500 sm:text-xs">{{ month.label }}</span><span class="text-[10px] font-semibold text-slate-400">€{{ month.total|floatformat:0 }}</span></div>{% endfor %}</div></section>
+  <section class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7" aria-labelledby="comparison-heading">
+    <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Period comparison</p>
+        <h2 id="comparison-heading" class="mt-1 font-display text-xl font-bold">Compared with the previous period of the same length</h2>
+      </div>
+      <p class="text-xs text-slate-600">{{ period_comparison.previous_start|date:'d M Y' }} — {{ period_comparison.previous_end|date:'d M Y' }}</p>
+    </div>
+    <div class="mt-5 grid gap-3 sm:grid-cols-3">
+      <div class="rounded-xl bg-mist p-4">
+        <p class="text-sm font-semibold text-slate-700">Income</p>
+        {% if period_comparison.income_change_available %}
+          <p class="mt-1 text-lg font-bold">{{ period_comparison.income_change_percent|floatformat:1 }}%</p>
+          <p class="text-xs text-slate-600">vs previous period</p>
+        {% else %}
+          <p class="mt-1 text-sm font-semibold text-slate-600">No previous income to compare</p>
+        {% endif %}
+      </div>
+      <div class="rounded-xl bg-mist p-4">
+        <p class="text-sm font-semibold text-slate-700">Expenses</p>
+        {% if period_comparison.expense_change_available %}
+          <p class="mt-1 text-lg font-bold">{{ period_comparison.expense_change_percent|floatformat:1 }}%</p>
+          <p class="text-xs text-slate-600">vs previous period</p>
+        {% else %}
+          <p class="mt-1 text-sm font-semibold text-slate-600">No previous expenses to compare</p>
+        {% endif %}
+      </div>
+      <div class="rounded-xl bg-mist p-4">
+        <p class="text-sm font-semibold text-slate-700">Net cash flow</p>
+        {% if period_comparison.cash_flow_change_available %}
+          <p class="mt-1 text-lg font-bold">{{ period_comparison.cash_flow_change_percent|floatformat:1 }}%</p>
+          <p class="text-xs text-slate-600">vs previous period</p>
+        {% else %}
+          <p class="mt-1 text-sm font-semibold text-slate-600">No previous net flow to compare</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
 
-  <section class="mt-8 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7"><div><p class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Category evolution</p><h2 class="mt-1 font-display text-xl font-bold">How each category changes</h2></div><div class="mt-6 overflow-x-auto"><div class="min-w-[760px]"><div class="grid grid-cols-[180px_repeat({{ months|length }},1fr)] gap-2 border-b border-slate-100 pb-3 text-[10px] font-bold uppercase tracking-[.12em] text-slate-500"><span>Category</span>{% for month in months %}<span class="text-center">{{ month.label }}</span>{% endfor %}</div>{% for category in categories %}<div class="grid grid-cols-[180px_repeat({{ months|length }},1fr)] items-center gap-2 border-b border-slate-100 py-4 last:border-0"><div><p class="truncate text-sm font-bold">{{ category.name }}</p><p class="text-xs text-slate-500">€ {{ category.total|floatformat:2 }} · {{ category.share|floatformat:0 }}%</p></div>{% for point in category.series %}<div class="flex h-10 items-end justify-center rounded-lg bg-mist px-1"><div class="w-full rounded-md bg-coral/75" style="height: {% if point.value %}max(4px, {{ point.bar|floatformat:0 }}%){% else %}0{% endif %};" title="€ {{ point.value|floatformat:2 }}"></div></div>{% endfor %}</div>{% empty %}<div class="py-10 text-center text-sm text-slate-500">No expenses found for this period.</div>{% endfor %}</div></div></section>
+  <section class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7" aria-labelledby="budget-comparison-heading">
+    <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Spending guardrails</p>
+        <h2 id="budget-comparison-heading" class="mt-1 font-display text-xl font-bold">Budget vs actual</h2>
+      </div>
+      <p class="text-xs text-slate-600">Recurring targets are prorated for partial cycles. Spending follows the selected dates and filters.</p>
+    </div>
+    <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {% for budget in budget_comparison %}
+        <article class="rounded-2xl border border-slate-200 bg-mist p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="truncate font-display text-lg font-bold">{{ budget.name }}</h3>
+              <p class="mt-1 text-xs text-slate-600">{{ budget.category }} · {{ budget.period }}</p>
+            </div>
+            {% if budget.over_budget %}
+              <span class="shrink-0 rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-800">Over budget</span>
+            {% else %}
+              <span class="shrink-0 rounded-full bg-mint px-2.5 py-1 text-xs font-bold text-ink">On track</span>
+            {% endif %}
+          </div>
+          <div class="mt-5 flex items-baseline justify-between gap-3">
+            <p class="font-display text-xl font-bold">{{ budget.currency }} {{ budget.spent|floatformat:2 }} <span class="font-sans text-xs font-semibold text-slate-600">spent</span></p>
+            {% if budget.budget_conversion_available %}<p class="text-right text-sm font-semibold text-slate-700">{{ budget.currency }} {{ budget.budgeted|floatformat:2 }} planned</p>{% else %}<p class="text-right text-sm font-semibold text-amber-800">No dated rate for the budget currency</p>{% endif %}
+          </div>
+          <div class="mt-3 h-2.5 overflow-hidden rounded-full bg-white" role="progressbar" aria-label="{{ budget.name }} budget used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ budget.progress_bar|floatformat:0 }}">
+            <div class="h-full rounded-full {% if budget.over_budget %}bg-rose-600{% else %}bg-mint{% endif %}" style="width: {{ budget.progress_bar|floatformat:0 }}%;"></div>
+          </div>
+          <div class="mt-2 flex justify-between gap-3 text-xs font-semibold">
+            <span class="{% if budget.over_budget %}text-rose-800{% else %}text-slate-600{% endif %}">{{ budget.progress|floatformat:1 }}% used</span>
+            {% if budget.over_budget %}
+              <span class="text-rose-800">{{ budget.currency }} {{ budget.over_amount|floatformat:2 }} over</span>
+            {% else %}
+              <span class="text-slate-600">{{ budget.currency }} {{ budget.remaining|floatformat:2 }} remaining</span>
+            {% endif %}
+          </div>
+        </article>
+      {% empty %}
+        <div class="rounded-2xl border border-dashed border-slate-300 bg-mist p-6 md:col-span-2 xl:col-span-3">
+          <h3 class="font-display text-lg font-bold">No budgets match this period.</h3>
+          <p class="mt-1 text-sm text-slate-600">Create a budget to compare your plan with actual spending.</p>
+          <a href="{% url 'finance_web:budgets' %}" class="mt-4 inline-flex min-h-11 items-center rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-ink/90">Manage budgets</a>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
 
-  <section class="mt-8 grid gap-8 lg:grid-cols-[1.2fr_.8fr]"><div class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7"><div><p class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Detail</p><h2 class="mt-1 font-display text-xl font-bold">Top subcategories</h2></div><div class="mt-6 space-y-5">{% for subcategory in subcategories|slice:':8' %}<div><div class="flex items-center justify-between gap-4 text-sm"><span class="truncate font-bold">{{ subcategory.name }}</span><span class="font-semibold text-slate-500">€ {{ subcategory.total|floatformat:2 }}</span></div><div class="mt-2 h-2 rounded-full bg-mist"><div class="h-2 rounded-full bg-mint" style="width: {% if subcategory.bar %}max(5px, {{ subcategory.bar|floatformat:0 }}%){% else %}0{% endif %};"></div></div></div>{% empty %}<p class="py-8 text-sm text-slate-500">No subcategory expenses found.</p>{% endfor %}</div></div><div class="rounded-[1.5rem] bg-ink p-6 text-white shadow-soft sm:p-7"><p class="text-xs font-bold uppercase tracking-[.16em] text-mint">Reading the data</p><h2 class="mt-3 font-display text-xl font-bold">Find the drift early.</h2><p class="mt-4 text-sm leading-7 text-slate-300">Use a six-month view to spot categories that are quietly growing, then narrow the range to understand what changed.</p><a href="/finance/categories/" class="mt-6 inline-flex rounded-xl bg-coral px-4 py-3 text-sm font-bold text-ink">Manage categories</a></div></section>
+  <section class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7" aria-labelledby="cash-flow-heading">
+    <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Monthly movement</p>
+        <h2 id="cash-flow-heading" class="mt-1 font-display text-xl font-bold">Income and spending</h2>
+      </div>
+      <p class="text-xs text-slate-600">Bars scale to the largest monthly total.</p>
+    </div>
+    <div class="mt-7 overflow-x-auto">
+      <div class="flex min-w-max items-end gap-3 sm:min-w-0 sm:gap-4" style="min-height: 13rem">
+        {% for month in cash_flow_months %}
+          <div class="flex min-w-16 flex-1 flex-col items-center justify-end gap-2">
+            <div class="flex h-36 w-full items-end justify-center gap-1" role="img" aria-label="{{ month.label }}: income {{ reporting_currency }} {{ month.income|floatformat:2 }}, expenses {{ reporting_currency }} {{ month.expenses|floatformat:2 }}, net {{ reporting_currency }} {{ month.net|floatformat:2 }}">
+              <div class="w-1/3 max-w-8 rounded-t-md bg-mint" style="height: {% if month.income %}max(4px, {{ month.income_bar|floatformat:0 }}%){% else %}2px{% endif %};" title="Income {{ reporting_currency }} {{ month.income|floatformat:2 }}"></div>
+              <div class="w-1/3 max-w-8 rounded-t-md bg-coral" style="height: {% if month.expenses %}max(4px, {{ month.expense_bar|floatformat:0 }}%){% else %}2px{% endif %};" title="Expenses {{ reporting_currency }} {{ month.expenses|floatformat:2 }}"></div>
+            </div>
+            <span class="text-center text-[10px] font-bold text-slate-600 sm:text-xs">{{ month.label }}</span>
+            <span class="text-center text-[10px] font-semibold {% if month.net < 0 %}text-rose-700{% else %}text-slate-600{% endif %}">{{ reporting_currency }} {{ month.net|floatformat:0 }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-4 text-xs font-semibold text-slate-700" aria-label="Chart legend">
+      <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-sm bg-mint"></span>Income</span>
+      <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-sm bg-coral"></span>Expenses</span>
+    </div>
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full min-w-[34rem] text-left text-sm">
+        <caption class="sr-only">Monthly income, expenses, and net cash flow</caption>
+        <thead><tr class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-600"><th scope="col" class="py-3 pr-4">Month</th><th scope="col" class="py-3 pr-4 text-right">Income</th><th scope="col" class="py-3 pr-4 text-right">Expenses</th><th scope="col" class="py-3 text-right">Net</th></tr></thead>
+        <tbody>
+          {% for month in cash_flow_months %}
+            <tr class="border-b border-slate-100 last:border-0">
+              <th scope="row" class="py-3 pr-4 font-semibold">{{ month.label }}</th>
+              <td class="py-3 pr-4 text-right">{{ reporting_currency }} {{ month.income|floatformat:2 }}</td>
+              <td class="py-3 pr-4 text-right">{{ reporting_currency }} {{ month.expenses|floatformat:2 }}</td>
+              <td class="py-3 text-right font-bold">{{ reporting_currency }} {{ month.net|floatformat:2 }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="py-8 text-center text-slate-600">No activity in this period.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7" aria-labelledby="category-heading">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Spending breakdown</p>
+      <h2 id="category-heading" class="mt-1 font-display text-xl font-bold">Where expenses go</h2>
+    </div>
+    <div class="mt-6 overflow-x-auto">
+      <div class="min-w-[42rem]">
+        <div class="grid gap-2 border-b border-slate-200 pb-3 text-[10px] font-bold uppercase tracking-[.12em] text-slate-600" style="grid-template-columns: 11rem repeat({{ months|length }}, minmax(3rem, 1fr))">
+          <span>Category</span>{% for month in months %}<span class="text-center">{{ month.label }}</span>{% endfor %}
+        </div>
+        {% for category in categories %}
+          <div class="grid items-center gap-2 border-b border-slate-100 py-4 last:border-0" style="grid-template-columns: 11rem repeat({{ months|length }}, minmax(3rem, 1fr))">
+            <div><p class="truncate text-sm font-bold">{{ category.name }}</p><p class="text-xs text-slate-600">{{ reporting_currency }} {{ category.total|floatformat:2 }} · {{ category.share|floatformat:0 }}%</p></div>
+            {% for point in category.series %}<div class="flex h-10 items-end justify-center rounded-lg bg-mist px-1" title="{{ category.name }} — {{ point.key }}: {{ reporting_currency }} {{ point.value|floatformat:2 }}"><div class="w-full rounded-md bg-coral/75" style="height: {% if point.value %}max(4px, {{ point.bar|floatformat:0 }}%){% else %}0{% endif %};"></div></div>{% endfor %}
+          </div>
+        {% empty %}
+          <p class="py-10 text-center text-sm text-slate-600">No expenses found for this period.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
+    <div class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7">
+      <div><p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Detail</p><h2 class="mt-1 font-display text-xl font-bold">Top subcategories</h2></div>
+      <div class="mt-6 space-y-5">
+        {% for subcategory in subcategories|slice:':8' %}
+          <div>
+            <div class="flex items-center justify-between gap-4 text-sm"><span class="truncate font-bold">{{ subcategory.name }}</span><span class="font-semibold text-slate-700">{{ reporting_currency }} {{ subcategory.total|floatformat:2 }}</span></div>
+            <div class="mt-2 h-2 rounded-full bg-mist"><div class="h-2 rounded-full bg-mint" style="width: {% if subcategory.bar %}max(5px, {{ subcategory.bar|floatformat:0 }}%){% else %}0{% endif %};"></div></div>
+          </div>
+        {% empty %}
+          <p class="py-8 text-sm text-slate-600">No subcategory expenses found.</p>
+        {% endfor %}
+      </div>
+    </div>
+    <aside class="rounded-[1.5rem] bg-ink p-6 text-white shadow-soft sm:p-7">
+      <p class="text-xs font-bold uppercase tracking-[.14em] text-mint">A useful next step</p>
+      <h2 class="mt-3 font-display text-xl font-bold">Notice the pattern.</h2>
+      <p class="mt-4 text-sm leading-7 text-slate-200">Compare this period with the previous one, then use category trends to spot where spending changed.</p>
+      <a href="{% url 'finance_web:categories' %}" class="mt-6 inline-flex min-h-12 items-center rounded-xl bg-coral px-4 py-3 text-sm font-bold text-ink">Manage categories</a>
+    </aside>
+  </section>
 </div>
 {% endblock %}

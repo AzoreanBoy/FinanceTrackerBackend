@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}New transaction{% endblock %}
+{% block eyebrow %}Money movement{% endblock %}
+{% block page_heading %}New transaction{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl">
+  <a href="{% url 'finance_web:transactions' %}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-ink">
+    <span aria-hidden="true">←</span> Back to transactions
+  </a>
+
+  <section class="mt-5 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-8">
+    <div class="mb-7">
+      <p class="text-xs font-bold uppercase tracking-[.16em] text-slate-400">Quick entry</p>
+      <h2 class="mt-2 font-display text-2xl font-bold tracking-tight">Add to your activity</h2>
+      <p class="mt-2 text-sm leading-6 text-slate-500">Capture the details now. Your balances and activity will update when you save.</p>
+    </div>
+
+    <form method="post" action="/api/finance/transactions/" data-ajax-transaction data-transaction-entry data-redirect-on-save="{% url 'finance_web:transactions' %}" class="grid gap-5 sm:grid-cols-2">
+      {% csrf_token %}
+      <label class="sm:col-span-2">
+        <span class="mb-2 block text-sm font-semibold text-slate-600">What was it for?</span>
+        <input name="title" required maxlength="50" autofocus placeholder="e.g. Weekly groceries" class="w-full rounded-xl border border-slate-200 bg-mist px-4 py-3 text-sm text-ink outline-none transition focus:border-ink focus:ring-4 focus:ring-ink/10">
+      </label>
+      <label>
+        <span class="mb-2 block text-sm font-semibold text-slate-600">Amount (in the account currency)</span>
+        <input name="amount" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="0.00" class="w-full rounded-xl border border-slate-200 bg-mist px-4 py-3 text-sm text-ink outline-none transition focus:border-ink focus:ring-4 focus:ring-ink/10">
+      </label>
+      <label>
+        <span class="mb-2 block text-sm font-semibold text-slate-600">Date</span>
+        <input name="transaction_date" type="date" value="{% now 'Y-m-d' %}" required class="w-full rounded-xl border border-slate-200 bg-mist px-4 py-3 text-sm text-ink outline-none transition focus:border-ink focus:ring-4 focus:ring-ink/10">
+      </label>
+      <label>
+        <span class="mb-2 block text-sm font-semibold text-slate-600">Account</span>
+        <select name="account" required class="w-full rounded-xl border border-slate-200 bg-mist px-4 py-3 text-sm text-ink outline-none focus:border-ink focus:ring-4 focus:ring-ink/10">
+          {% for account in accounts %}<option value="{{ account.id }}">{{ account.name }} · {{ account.currency }}</option>{% endfor %}
+        </select>
+      </label>
+      <fieldset class="sm:col-span-2">
+        <legend class="mb-2 text-sm font-semibold text-slate-600">Transaction type</legend>
+        <input type="hidden" name="type" data-entry-type-select value="expense">
+        <div class="grid grid-cols-2 gap-2 rounded-2xl bg-[#f4efed] p-1.5" role="radiogroup" aria-label="Transaction type">
+          <button type="button" role="radio" aria-checked="true" data-entry-type-choice="expense" class="transaction-type-choice">
+            <span class="material-symbols-outlined" aria-hidden="true">south_west</span>
+            <span>Expense</span>
+          </button>
+          <button type="button" role="radio" aria-checked="false" data-entry-type-choice="income" class="transaction-type-choice">
+            <span class="material-symbols-outlined" aria-hidden="true">north_east</span>
+            <span>Income</span>
+          </button>
+        </div>
+      </fieldset>
+      <fieldset class="sm:col-span-2">
+        <legend class="mb-2 text-sm font-semibold text-slate-600">Category</legend>
+        <input type="hidden" name="category" data-category-select value="">
+        <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          <button type="button" data-category-option data-category-id="" aria-pressed="true" class="category-choice">
+            <span aria-hidden="true" class="text-xl">✨</span><span>Uncategorised</span>
+          </button>
+          {% for category in categories %}
+            <button type="button" data-category-option data-category-id="{{ category.id }}" aria-pressed="false" class="category-choice">
+              <span aria-hidden="true">{% if category.icon_is_emoji %}<span class="text-xl">{{ category.display_icon }}</span>{% else %}<span class="material-symbols-outlined text-xl">{{ category.display_icon }}</span>{% endif %}</span>
+              <span>{{ category.name }}</span>
+            </button>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <fieldset class="hidden sm:col-span-2" data-subcategory-field>
+        <legend class="mb-2 text-sm font-semibold text-slate-600">Subcategory <span class="font-normal text-slate-400">· Optional</span></legend>
+        <input type="hidden" name="subcategory" data-subcategory-select value="">
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Subcategory">
+          <button type="button" role="radio" aria-checked="true" data-subcategory-option data-subcategory-id="" data-category-id="" class="subcategory-choice">
+            <span class="material-symbols-outlined" aria-hidden="true">remove</span><span>No subcategory</span>
+          </button>
+          {% for subcategory in subcategories %}
+            <button type="button" role="radio" aria-checked="false" data-subcategory-option data-subcategory-id="{{ subcategory.id }}" data-category-id="{{ subcategory.category_id }}" class="subcategory-choice">
+              <span aria-hidden="true">{% if subcategory.icon_is_emoji %}{{ subcategory.display_icon }}{% else %}<span class="material-symbols-outlined">{{ subcategory.display_icon }}</span>{% endif %}</span>
+              <span>{{ subcategory.name }}</span>
+            </button>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <label class="sm:col-span-2">
+        <span class="mb-2 block text-sm font-semibold text-slate-600">Note <span class="font-normal text-slate-400">· Optional</span></span>
+        <input name="description" maxlength="200" placeholder="Add a little more context" class="w-full rounded-xl border border-slate-200 bg-mist px-4 py-3 text-sm text-ink outline-none focus:border-ink focus:ring-4 focus:ring-ink/10">
+      </label>
+      <fieldset class="sm:col-span-2">
+        <legend class="mb-2 text-sm font-semibold text-slate-600">Tags <span class="font-normal text-slate-400">· Optional</span></legend>
+        <div class="flex flex-wrap gap-2">
+          {% for tag in tags %}
+            <label class="cursor-pointer">
+              <input type="checkbox" name="tags" value="{{ tag.id }}" class="sr-only peer">
+              <span class="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-mist px-4 py-2 text-sm font-semibold text-slate-600 transition peer-checked:border-[#d98b78] peer-checked:bg-[#fff0eb] peer-checked:text-[#9e5c50] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-[#e5a28f]">{{ tag.name }}</span>
+            </label>
+          {% empty %}
+            <span class="text-sm text-slate-500">Tags are optional. You can add them later.</span>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <div class="transaction-form-actions -mx-5 sticky z-10 flex flex-col-reverse gap-3 border-t border-slate-100 bg-white/95 px-5 py-4 backdrop-blur sm:static sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:pt-2 sm:col-span-2">
+        <a href="{% url 'finance_web:transactions' %}" class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50">Cancel</a>
+        <button type="submit" class="inline-flex min-h-12 items-center justify-center rounded-xl bg-coral px-5 py-3 text-sm font-bold text-ink shadow-sm transition hover:-translate-y-0.5">Save transaction</button>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

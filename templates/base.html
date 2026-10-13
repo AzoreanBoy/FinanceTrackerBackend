@@ -3,65 +3,28 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#102a43">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#fbf7f4">
     <meta name="description"
           content="A calm, practical home for your finances.">
-    <link rel="manifest" href="/static/manifest.webmanifest">
+    <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+    <link rel="icon" href="{% static 'app-icon.svg' %}" type="image/svg+xml">
     <title>{% block title %}Ledger{% endblock %} · FinanceTracker</title>
     <script src="/static/tailwind.config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Nunito:wght@500;600;700;800&display=swap"
           rel="stylesheet">
-    <style>
-    :root { --ledger-ink: #183b56; --ledger-ink-soft: #244e68; --ledger-mist: #edf4f7; --ledger-mint: #d9eee5; --ledger-coral: #2f8f9d; --ledger-muted: #526b7a; }
-    html[data-accent="meadow"] body .bg-coral { background-color: #69aa8b !important; }
-    html[data-accent="ocean"] body .bg-coral { background-color: #65a6c6 !important; }
-    html[data-accent="gold"] body .bg-coral { background-color: #7894a5 !important; }
-    html[data-accent="meadow"] .text-coral { color: #388a5a !important; }
-    html[data-accent="ocean"] .text-coral { color: #397fa7 !important; }
-    html[data-accent="gold"] .text-coral { color: #896719 !important; }
-    html[data-density="compact"] main > div { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-    html[data-density="compact"] .shadow-soft { box-shadow: 0 8px 24px -20px rgba(16, 42, 67, .35); }
-    html.reduced-motion *, html.reduced-motion *::before, html.reduced-motion *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
-    body .text-slate-400 { color: #64748b !important; }
-    body .text-slate-500 { color: #475569 !important; }
-    body .bg-ink .text-slate-300 { color: #cbd5e1 !important; }
-    body .bg-ink .text-slate-400, body .bg-ink .text-slate-500 { color: #cbd5e1 !important; }
-    body .bg-ink { background-color: var(--ledger-ink) !important; }
-    html, body, body.bg-mist, main { background-color: #edf4f7 !important; }
-    body .bg-mist { background-color: #edf4f7 !important; }
-    #sidebar { background-color: #183b56 !important; border-color: #2c5b76 !important; color: #ffffff; }
-    #sidebar .text-slate-500, #sidebar .text-slate-400 { color: #d9e2ec !important; }
-    #sidebar .border-slate-100 { border-color: #294e6b !important; }
-    #sidebar .bg-ink { background-color: rgba(255, 255, 255, .1) !important; }
-    #sidebar .font-display { color: #ffffff; }
-    body .bg-mint { background-color: var(--ledger-mint) !important; }
-    body .bg-coral { background-color: var(--ledger-coral) !important; }
-    body .bg-white { background-color: #f7fafb !important; }
-    body .bg-\[\#fff0eb\] { background-color: #e3f1f2 !important; }
-    body .bg-\[\#fff8f5\] { background-color: #edf4f5 !important; }
-    body .bg-\[\#fffaf0\] { background-color: #eef2f4 !important; }
-    body .bg-\[\#2f9eaa\] { background-color: #2f8f9d !important; }
-    body div[style*="background: #2f9eaa"] { background: #2f8f9d !important; }
-    body .text-\[\#c65d3c\] { color: #24747b !important; }
-    body .border-amber-400 { border-color: #6d8193 !important; }
-    body .text-ink { color: var(--ledger-ink) !important; }
-    body form[data-transaction-entry] input, body form[data-transaction-entry] select, body .bg-ink form input, body .bg-ink form select { background-color: var(--ledger-ink-soft) !important; border-color: #486581 !important; color: #ffffff !important; }
-    body form[data-transaction-entry] input::placeholder, body .bg-ink form input::placeholder { color: #bcccdc !important; opacity: 1; }
-    body form[data-transaction-entry] option, body .bg-ink form option { background-color: #ffffff !important; color: var(--ledger-ink) !important; }
-    body .bg-ink form .text-slate-300 { color: #d9e2ec !important; }
-    body .bg-ink form button[type="submit"] { background-color: var(--ledger-coral) !important; color: var(--ledger-ink) !important; }
-    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #7ab6d6; outline-offset: 2px; }
-    </style>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+    <link rel="stylesheet" href="{% static 'app.css' %}?v=12">
   </head>
   <body class="min-h-screen bg-mist font-sans text-ink antialiased"
         style="background-color: #edf4f7">
     <div class="min-h-screen lg:flex">
       <aside id="sidebar"
-             class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-slate-200 bg-white px-6 py-7 transition-transform duration-300 lg:static lg:translate-x-0">
+             class="fixed inset-y-0 left-0 z-40 flex h-dvh max-h-dvh w-[min(18rem,calc(100vw-1rem))] -translate-x-full flex-col overflow-hidden overscroll-contain border-r border-slate-200 bg-white px-5 py-6 shadow-2xl transition-transform duration-300 sm:px-6 sm:py-7 lg:sticky lg:top-0 lg:h-screen lg:max-h-screen lg:w-72 lg:translate-x-0 lg:shadow-none">
         <div class="flex items-center justify-between">
           <a href="/" class="flex items-center gap-3" aria-label="Ledger home">
             <span class="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-lg font-bold text-mint">FT</span>
@@ -72,43 +35,72 @@
                   class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 lg:hidden"
                   aria-label="Close navigation">✕</button>
         </div>
-        <nav class="mt-12 space-y-2" aria-label="Main navigation">
+        <nav class="mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1" aria-label="Main navigation">
           <p class="mb-4 px-3 text-[11px] font-bold uppercase tracking-[.18em] text-slate-400">Workspace</p>
           <a href="/"
-             class="flex items-center gap-3 rounded-xl bg-coral px-3 py-3 text-sm font-semibold text-ink shadow-soft">
-            <span class="text-lg">◉</span> Overview
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'dashboard' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">space_dashboard</span> Overview
           </a>
           <a href="/finance/accounts/"
-             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-ink">
-            <span class="text-lg">●</span> Accounts
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'accounts' or request.resolver_match.url_name == 'accounts_details' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'accounts' or request.resolver_match.url_name == 'accounts_details' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span> Accounts
           </a>
           <a href="/finance/transactions/"
-             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-ink">
-            <span class="text-lg">⇄</span> Transactions
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'transactions' or request.resolver_match.url_name == 'transaction_create' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'transactions' or request.resolver_match.url_name == 'transaction_create' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span> Transactions
           </a>
           <a href="/finance/analytics/"
-             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-ink">
-            <span class="text-lg">☷</span> Analytics
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'analytics' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'analytics' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">monitoring</span> Analytics
           </a>
           <a href="/finance/budgets/"
-             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-ink">
-            <span class="text-lg">□</span> Budgets
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'budgets' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'budgets' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">savings</span> Budgets
+          </a>
+          <a href="/finance/debts/"
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'debts' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'debts' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span> Money owed
           </a>
           <a href="/finance/recurring/"
-             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-ink">
-            <span class="text-lg">↻</span> Recurring
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'recurring' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'recurring' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">autorenew</span> Recurring
           </a>
           <a href="/finance/categories/"
-             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-ink">
-            <span class="text-lg">◆</span> Categories
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'categories' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'categories' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">category</span> Categories
+          </a>
+          <a href="/finance/tags/"
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'tags' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'tags' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">sell</span> Tags
+          </a>
+          <a href="/finance/import/"
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'import' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'import' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">upload_file</span> Import CSV
+          </a>
+          <a href="/finance/currencies/"
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'currencies' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'currencies' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">currency_exchange</span> Currencies
           </a>
           <a href="/finance/goals/"
-             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-ink">
-            <span class="text-lg">✦</span> Savings goals
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'goals' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'goals' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">flag</span> Savings goals
           </a>
           <a href="/accounts/settings/"
-             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-ink">
-            <span class="text-lg">⚙</span> Settings
+             class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold {% if request.resolver_match.url_name == 'settings' %}bg-coral text-ink shadow-soft{% else %}text-slate-500 transition hover:bg-slate-100 hover:text-ink{% endif %}"
+             {% if request.resolver_match.url_name == 'settings' %}aria-current="page"{% endif %}>
+            <span class="material-symbols-outlined" aria-hidden="true">settings</span> Settings
           </a>
         </nav>
         <div class="mt-auto rounded-2xl bg-ink p-5 text-white">
@@ -126,33 +118,54 @@
         </div>
       </aside>
       <div id="sidebar-backdrop"
-           class="fixed inset-0 z-30 hidden bg-ink/30 backdrop-blur-sm lg:hidden"></div>
+           class="fixed inset-0 z-30 hidden bg-ink/40 backdrop-blur-sm lg:hidden"
+           aria-hidden="true"></div>
+      <nav id="mobile-bottom-nav" aria-label="Quick navigation">
+        <a href="/" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>
+          <span class="material-symbols-outlined" aria-hidden="true">space_dashboard</span><span>Home</span>
+        </a>
+        <a href="/finance/transactions/" {% if request.resolver_match.url_name == 'transactions' %}aria-current="page"{% endif %}>
+          <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span>Activity</span>
+        </a>
+        <a class="mobile-add-action" href="{% url 'finance_web:transaction_create' %}" {% if request.resolver_match.url_name == 'transaction_create' %}aria-current="page"{% endif %} aria-label="Add transaction">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span><span>Add</span>
+        </a>
+        <a href="/finance/analytics/" {% if request.resolver_match.url_name == 'analytics' %}aria-current="page"{% endif %}>
+          <span class="material-symbols-outlined" aria-hidden="true">monitoring</span><span>Insights</span>
+        </a>
+        <a href="/finance/accounts/" {% if request.resolver_match.url_name == 'accounts' or request.resolver_match.url_name == 'accounts_details' %}aria-current="page"{% endif %}>
+          <span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span><span>Accounts</span>
+        </a>
+      </nav>
       <main class="min-w-0 flex-1" style="background-color: #edf4f7;">
-        <header class="sticky top-0 z-20 border-b border-slate-200/80 bg-mist/90 px-5 py-4 backdrop-blur-md sm:px-8 lg:px-12">
+        <header class="sticky top-0 z-20 border-b border-slate-200/80 bg-mist/90 px-4 py-3 backdrop-blur-md sm:px-8 sm:py-4 lg:px-12">
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
               <button type="button"
                       data-sidebar-open
                       class="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 shadow-sm lg:hidden"
-                      aria-label="Open navigation">☰</button>
+                      aria-label="Open navigation"
+                      aria-controls="sidebar"
+                      aria-expanded="false">☰</button>
               <div>
-                <p class="text-xs font-semibold uppercase tracking-[.18em] text-slate-400">{% block eyebrow %}Personal finance{% endblock %}</p>
-                <h1 class="mt-1 font-display text-xl font-bold tracking-tight sm:text-2xl">{% block page_heading %}Good morning{% endblock %}</h1>
+                <p class="hidden text-xs font-semibold uppercase tracking-[.18em] text-slate-400 sm:block">{% block eyebrow %}Personal finance{% endblock %}</p>
+                <h1 class="font-display text-lg font-bold tracking-tight sm:mt-1 sm:text-2xl">{% block page_heading %}Good morning{% endblock %}</h1>
               </div>
             </div>
             <div class="flex items-center gap-2 sm:gap-3">
               <a href="/finance/transactions/"
-                 class="hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-500 shadow-sm transition hover:border-slate-300 sm:block">⌕ Search</a>
-              <a href="/finance/transactions/#new-transaction"
-                 class="inline-flex items-center gap-2 rounded-xl bg-coral px-3.5 py-2.5 text-sm font-bold text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:px-4"><span class="text-lg leading-none">+</span><span class="hidden sm:inline">Add transaction</span><span class="sm:hidden">Add</span></a>
+                 class="hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-500 shadow-sm transition hover:border-slate-300 lg:block">⌕ Search</a>
+              <a href="{% url 'finance_web:transaction_create' %}"
+                 class="hidden items-center gap-2 rounded-xl bg-coral px-3.5 py-2.5 text-sm font-bold text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:px-4 lg:inline-flex"><span class="material-symbols-outlined text-lg leading-none" aria-hidden="true">add</span>Add transaction</a>
+              <form action="{% url 'logout' %}" method="post">{% csrf_token %} <button type="submit" aria-label="Sign out" title="Sign out" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-500 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md sm:px-4"><span class="material-symbols-outlined" aria-hidden="true">logout</span></button></form>
             </div>
           </div>
         </header>
-        <div class="px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
+        <div class="px-4 py-5 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
           {% block content %}{% endblock %}
         </div>
       </main>
     </div>
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js?v=12"></script>
   </body>
 </html>

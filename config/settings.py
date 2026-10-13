@@ -99,6 +99,9 @@ AUTH_USER_MODEL = "accounts.CustomUser"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "finance_web:dashboard"
 
+LOGOUT_URL = "logout"
+LOGOUT_REDIRECT_URL = "login"
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 

@@ -19,7 +19,9 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.authtoken.views import obtain_auth_token
 
+from django.contrib.auth.views import LogoutView
 from django.views.generic import TemplateView
+from finance.web_views import service_worker
 
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -28,10 +30,12 @@ from drf_spectacular.views import (
 )
 
 urlpatterns = [
+    path("service-worker.js", service_worker, name="service_worker"),
     # Web application
     path("", include("finance.web_urls")),
     path("accounts/", include("accounts.web_urls")),
     path("accounts/", include("django.contrib.auth.urls")),
+    path("logout/", LogoutView.as_view(), name="logout"),
     # Admin site
     path("admin/", admin.site.urls),
     # Documentation and schema

@@ -7,14 +7,76 @@
 {% block content %}
 <div class="mx-auto max-w-6xl">
   {% include "finance/_messages.html" %}
-  <div class="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p class="text-sm text-slate-500">Keep balances and places easy to scan.</p><h2 class="mt-2 font-display text-3xl font-bold tracking-tight">Your accounts.</h2></div><span class="rounded-full bg-mint px-3 py-1.5 text-xs font-bold text-ink">{{ accounts|length }} account{{ accounts|length|pluralize }}</span></div>
+  <div class="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+    <div><p class="text-sm text-slate-500">Keep balances and places easy to scan.</p><h2 class="mt-2 font-display text-3xl font-bold tracking-tight">Your accounts.</h2></div>
+    <span class="rounded-full bg-mint px-3 py-1.5 text-xs font-bold text-ink">{{ accounts|length }} account{{ accounts|length|pluralize }}</span>
+  </div>
   <div class="grid gap-8 lg:grid-cols-[1.35fr_.65fr]">
-    <div class="grid gap-4 sm:grid-cols-2">
+    <div class="grid content-start gap-4 sm:grid-cols-2">
       {% for account in accounts %}
-      <article class="relative overflow-hidden rounded-[1.5rem] border-l-4 {% cycle 'border-coral bg-[#fff8f5]' 'border-emerald-400 bg-[#f3fcf6]' 'border-sky-400 bg-[#f3f9fc]' 'border-amber-400 bg-[#fffaf0]' %} p-6 shadow-soft"><div class="flex items-start justify-between"><span class="grid h-11 w-11 place-items-center rounded-2xl bg-white/80 font-display text-lg font-bold">{{ account.name|first|upper }}</span><span class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Active</span></div><h3 class="mt-8 font-display text-lg font-bold">{{ account.name }}</h3><p class="mt-2 font-display text-3xl font-bold">€ {{ account.balance|floatformat:2 }}</p><p class="mt-3 text-xs text-slate-500">Updated with every transaction</p></article>
-      {% empty %}<div class="rounded-[1.5rem] border border-dashed border-slate-300 bg-white p-8 sm:col-span-2"><h3 class="font-display text-xl font-bold">Your first account starts here.</h3><p class="mt-2 text-sm text-slate-500">Add a bank account, wallet or card below.</p></div>{% endfor %}
+      <article class="account-card relative overflow-hidden rounded-[1.5rem] border border-slate-200 border-l-4 bg-white p-5 shadow-soft sm:p-6" style="--account-accent: {{ account.color }}">
+        <div class="flex items-start justify-between gap-3">
+          <span class="grid h-12 w-12 place-items-center rounded-2xl text-2xl" style="background-color: color-mix(in srgb, var(--account-accent) 14%, white)" aria-hidden="true">{{ account.icon }}</span>
+          <div class="flex items-center gap-1">
+            <button type="button" data-edit-account data-account-id="{{ account.id }}" data-account-name="{{ account.name }}" data-account-currency="{{ account.currency }}" data-account-color="{{ account.color }}" data-account-icon="{{ account.icon }}" data-currency-editable="{{ account.currency_editable|yesno:'true,false' }}" class="grid h-10 w-10 place-items-center rounded-xl text-slate-500 transition hover:bg-white hover:text-ink" aria-label="Edit {{ account.name }}" title="Edit account"><span class="material-symbols-outlined text-lg" aria-hidden="true">edit</span></button>
+            <span class="rounded-full bg-white/80 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-slate-500">Active</span>
+          </div>
+        </div>
+        <h3 class="mt-5 truncate font-display text-lg font-bold">{{ account.name }}</h3>
+        <p class="mt-1 font-display text-3xl font-bold">{{ account.currency }} {{ account.balance|floatformat:2 }}</p>
+        <p class="mt-2 text-xs text-slate-500">Updated with every transaction</p>
+        <a href="{% url 'finance_web:accounts_details' account.id %}" class="mt-5 inline-flex min-h-10 items-center rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-sm font-bold text-ink transition hover:bg-white">View balance history <span class="ml-2" aria-hidden="true">→</span></a>
+        {% if account.deletable %}
+        <form method="post" class="mt-3" data-confirm-delete data-confirm-message="Delete this empty account?">
+          {% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="account_id" value="{{ account.pk }}">
+          <button type="submit" class="min-h-9 rounded-lg px-2 py-1 text-xs font-bold text-rose-700 hover:bg-rose-50">Delete empty account</button>
+        </form>
+        {% else %}
+        <p class="mt-3 text-xs text-slate-500">This account has financial history and is protected from deletion.</p>
+        {% endif %}
+      </article>
+      {% empty %}
+      <div class="rounded-[1.5rem] border border-dashed border-slate-300 bg-white p-8 sm:col-span-2"><h3 class="font-display text-xl font-bold">Your first account starts here.</h3><p class="mt-2 text-sm text-slate-500">Add a bank account, wallet or card below.</p></div>
+      {% endfor %}
     </div>
-    <section class="h-fit rounded-[1.5rem] bg-ink p-6 text-white shadow-soft"><p class="text-xs font-bold uppercase tracking-[.16em] text-mint">New account</p><h2 class="mt-3 font-display text-xl font-bold">Add a place for money.</h2><form method="post" class="mt-6 space-y-4">{% csrf_token %}<label class="block"><span class="mb-2 block text-sm font-bold text-slate-300">Name</span><input name="name" required placeholder="e.g. Main bank" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-mint"></label><label class="block"><span class="mb-2 block text-sm font-bold text-slate-300">Opening balance</span><input name="balance" type="number" min="0" step="0.01" value="0.00" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-mint"></label><button type="submit" class="w-full rounded-xl bg-mint px-4 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5">Create account</button></form></section>
+
+    <section class="h-fit rounded-[1.5rem] bg-ink p-6 text-white shadow-soft">
+      <p class="text-xs font-bold uppercase tracking-[.16em] text-mint">New account</p>
+      <h2 class="mt-3 font-display text-xl font-bold">Add a place for money.</h2>
+      <form method="post" class="mt-6 space-y-4">
+        {% csrf_token %}<input type="hidden" name="action" value="create">
+        <label class="block"><span class="mb-2 block text-sm font-bold text-slate-300">Name</span><input name="name" required maxlength="100" placeholder="e.g. Main bank" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-mint"></label>
+        <label class="block"><span class="mb-2 block text-sm font-bold text-slate-300">Currency</span><input name="currency" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" value="EUR" aria-describedby="currency-code-help" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm uppercase text-white outline-none focus:border-mint"><span id="currency-code-help" class="mt-1 block text-xs text-slate-300">Three-letter currency code, such as EUR, USD or GBP.</span></label>
+        <label class="block"><span class="mb-2 block text-sm font-bold text-slate-300">Current balance</span><input name="balance" type="number" min="0" step="0.01" value="0.00" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-mint"></label>
+        <label class="block"><span class="mb-2 block text-sm font-bold text-slate-300">Balance as of <span class="font-normal text-slate-300">· optional</span></span><input name="opening_balance_date" type="date" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-mint"><span class="mt-2 block text-xs leading-5 text-slate-300">Add a confirmed date to enable balance history.</span></label>
+        <fieldset><legend class="mb-2 text-sm font-bold text-slate-300">Choose an icon</legend><div class="grid grid-cols-6 gap-2">{% for icon, label in account_icons %}<label class="account-icon-option" title="{{ label }}"><input class="peer sr-only" type="radio" name="icon" value="{{ icon }}" {% if icon == "🏦" %}checked{% endif %}><span aria-label="{{ label }}">{{ icon }}</span></label>{% endfor %}</div></fieldset>
+        <fieldset><legend class="mb-2 text-sm font-bold text-slate-300">Card color</legend><div class="flex flex-wrap gap-3">{% for color, label in account_colors %}<label class="account-color-option" title="{{ label }}"><input class="peer sr-only" type="radio" name="color" value="{{ color }}" {% if color == "#E88B72" %}checked{% endif %}><span style="--account-accent: {{ color }}" aria-label="{{ label }}"></span></label>{% endfor %}</div></fieldset>
+        <button type="submit" class="w-full rounded-xl bg-mint px-4 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5">Create account</button>
+      </form>
+    </section>
   </div>
 </div>
+
+<section id="edit-account-modal" class="fixed inset-0 z-50 hidden items-end justify-center overflow-hidden bg-ink/50 p-0 backdrop-blur-sm sm:items-center sm:p-5" aria-hidden="true">
+  <div class="account-edit-panel flex w-full max-w-xl flex-col overflow-hidden border border-slate-200 bg-white text-ink shadow-2xl">
+    <header class="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-6">
+      <div class="flex min-w-0 items-center gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#fff0eb] text-2xl" data-account-icon-preview aria-hidden="true">🏦</span><div class="min-w-0"><p class="text-[11px] font-bold uppercase tracking-[.14em] text-[#9e5c50]">Account settings</p><h2 id="edit-account-title" class="mt-0.5 truncate font-display text-lg font-bold sm:text-xl">Edit account</h2></div></div>
+      <button type="button" data-close-account-modal class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-mist text-lg text-slate-600 transition hover:bg-slate-200" aria-label="Close account editor">&#10005;</button>
+    </header>
+    <form method="post" class="flex min-h-0 flex-1 flex-col">
+      {% csrf_token %}<input type="hidden" name="action" value="update"><input type="hidden" name="account_id" data-edit-account-id>
+      <div class="account-edit-content min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
+        <label class="block"><span class="mb-1.5 block text-sm font-semibold text-slate-600">Account name</span><input name="name" required maxlength="100" class="w-full rounded-xl border border-slate-200 bg-mist px-4 py-3 text-sm text-ink outline-none transition focus:border-[#e89b87] focus:ring-4 focus:ring-[#f3a18d]/15"></label>
+        <label class="block"><span class="mb-1.5 block text-sm font-semibold text-slate-600">Currency</span><input name="currency" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" class="w-full rounded-xl border border-slate-200 bg-mist px-4 py-3 text-sm uppercase text-ink outline-none transition focus:border-[#e89b87] focus:ring-4 focus:ring-[#f3a18d]/15" data-edit-account-currency><span class="mt-1 block text-xs leading-5 text-slate-500" data-currency-help>Changing currency does not convert any existing balance or transactions.</span></label>
+        <fieldset><legend class="mb-2 text-sm font-semibold text-slate-600">Icon</legend><div class="grid grid-cols-6 gap-2">{% for icon, label in account_icons %}<label class="account-icon-option account-icon-option-light" title="{{ label }}"><input class="peer sr-only" type="radio" name="icon" value="{{ icon }}"><span aria-label="{{ label }}">{{ icon }}</span></label>{% endfor %}</div></fieldset>
+        <fieldset><legend class="mb-2 text-sm font-semibold text-slate-600">Card color</legend><div class="flex flex-wrap gap-3">{% for color, label in account_colors %}<label class="account-color-option"><input class="peer sr-only" type="radio" name="color" value="{{ color }}"><span style="--account-accent: {{ color }}" aria-label="{{ label }}"></span></label>{% endfor %}</div></fieldset>
+        <p class="rounded-xl bg-mist px-4 py-3 text-xs leading-5 text-slate-600">Your current balance and transaction history are kept as-is. To correct a balance, use the dated balance controls on the account history page.</p>
+      </div>
+      <div class="flex shrink-0 justify-end gap-3 border-t border-slate-100 bg-white px-4 py-3 sm:px-6">
+        <button type="button" data-close-account-modal class="min-h-11 rounded-xl border border-slate-200 px-5 text-sm font-bold text-slate-600 transition hover:bg-mist">Cancel</button>
+        <button type="submit" class="min-h-11 rounded-xl bg-coral px-5 text-sm font-bold text-ink transition hover:-translate-y-0.5">Save changes</button>
+      </div>
+    </form>
+  </div>
+</section>
 {% endblock %}

@@ -4,16 +4,16 @@ window.tailwind.config = {
     extend: {
       fontFamily: {
         sans: ["DM Sans", "ui-sans-serif", "system-ui"],
-        display: ["Space Grotesk", "ui-sans-serif", "system-ui"]
+        display: ["Nunito", "ui-sans-serif", "system-ui"]
       },
       colors: {
-        ink: "#183b56",
-        mist: "#edf4f7",
-        mint: "#d9eee5",
-        coral: "#2f8f9d"
+        ink: "#49394f",
+        mist: "#fbf7f4",
+        mint: "#e8f3e8",
+        coral: "#f3a18d"
       },
       boxShadow: {
-        soft: "0 18px 50px -28px rgba(16, 42, 67, .35)"
+        soft: "0 14px 34px -26px rgba(73, 57, 79, .30)"
       }
     }
   }

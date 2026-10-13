@@ -1,90 +1,158 @@
-{% extends 'base.html' %}
-
-{% block title %}
-  Categories
-{% endblock %}
-{% block eyebrow %}
-  Give every expense a shape
-{% endblock %}
-{% block page_heading %}
-  Categories
-{% endblock %}
-
+{% extends "base.html" %}
+{% block title %}Categories{% endblock %}
+{% block eyebrow %}Organize your money{% endblock %}
+{% block page_heading %}Categories{% endblock %}
 {% block content %}
-  <div class="mx-auto max-w-6xl">
-    {% include 'finance/_messages.html' %}
-    <div class="mb-8">
-      <p class="text-sm text-slate-500">Categories keep the dashboard useful. Subcategories reveal the detail.</p><h2 class="mt-2 font-display text-3xl font-bold tracking-tight">Your spending language.</h2>
+<div class="mx-auto max-w-7xl space-y-7">
+  {% include "finance/_messages.html" %}
+  <header class="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-soft sm:flex-row sm:items-center sm:p-8">
+    <div>
+      <p class="text-sm text-slate-500">Make every transaction easier to understand.</p>
+      <h2 class="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">A clearer view of your spending.</h2>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Group money by the things you care about, then add subcategories when you need more detail.</p>
     </div>
-    <div class="grid gap-8 lg:grid-cols-[1.2fr_.8fr]">
-      <section class="space-y-3">
+    <div class="flex shrink-0 items-center gap-3 rounded-2xl bg-mist px-4 py-3">
+      <span class="grid h-10 w-10 place-items-center rounded-xl bg-white text-xl shadow-sm" aria-hidden="true">🗂️</span>
+      <span><strong class="block font-display text-xl">{{ categories|length }}</strong><span class="text-xs font-semibold text-slate-500">categories</span></span>
+    </div>
+  </header>
+
+  <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(19rem,.75fr)]">
+    <section aria-label="Your categories">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Your setup</p>
+          <h2 class="mt-1 font-display text-xl font-bold">Categories and subcategories</h2>
+        </div>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
         {% for category in categories %}
-          <article class="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft">
-            <div class="flex items-center justify-between gap-4">
-              <div class="flex items-center gap-3">
-                <span class="grid h-10 w-10 place-items-center rounded-xl {% if category.type == 'income' %}
-                    
-                    bg-mint
-
+          <article class="flex flex-col rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex min-w-0 items-center gap-3">
+                <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl {% if category.type == 'income' %}bg-mint{% else %}bg-[#fff0eb]{% endif %}" aria-hidden="true">
+                  {% if category.icon_is_emoji %}
+                    <span class="text-2xl">{{ category.display_icon }}</span>
                   {% else %}
-                    
-                    bg-[#fff0eb]
-
-                  {% endif %} font-bold">
-                  {% if category.type == 'income' %}
-                    ↗
-                  {% else %}
-                    ↘
+                    <span class="material-symbols-outlined text-2xl">{{ category.display_icon }}</span>
                   {% endif %}
-                </span><div>
-                  <h3 class="font-display font-bold">{{ category.name }}</h3><p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">{{ category.type|default:'expense' }}</p>
+                </span>
+                <div class="min-w-0">
+                  <h3 class="truncate font-display text-base font-bold">{{ category.name }}</h3>
+                  <span class="mt-1 inline-flex rounded-full {% if category.type == 'income' %}bg-mint text-emerald-800{% else %}bg-mist text-slate-600{% endif %} px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.12em]">{{ category.type|default:"expense" }}</span>
                 </div>
-              </div><span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ category.subcategories.all|length }} subcategor{{ category.subcategories.all|length|pluralize:'y,ies' }}</span>
-            </div>
-            {% if category.subcategories.all %}
-              <div class="mt-5 flex flex-wrap gap-2">
-                {% for subcategory in category.subcategories.all %}
-                  <span class="rounded-lg bg-mist px-3 py-1.5 text-xs font-semibold text-slate-600">{{ subcategory.name }}</span>
-                {% endfor %}
               </div>
-            {% else %}
-              <p class="mt-4 text-sm text-slate-500">No subcategories yet.</p>
-            {% endif %}
+              <span class="shrink-0 rounded-full bg-mist px-2.5 py-1 text-xs font-bold text-slate-600">{{ category.subcategories.all|length }}</span>
+            </div>
+            <div class="mt-4 border-t border-slate-100 pt-4">
+              {% if category.subcategories.all %}
+                <div class="flex flex-wrap gap-2">
+                  {% for subcategory in category.subcategories.all %}
+                    <details class="subcategory-management">
+                      <summary class="inline-flex min-h-10 cursor-pointer list-none items-center gap-1.5 rounded-lg border border-slate-100 bg-mist px-2.5 py-1.5 text-xs font-semibold text-slate-600">
+                        {% if subcategory.icon_is_emoji %}<span aria-hidden="true">{{ subcategory.display_icon }}</span>{% else %}<span class="material-symbols-outlined text-sm" aria-hidden="true">{{ subcategory.display_icon }}</span>{% endif %}
+                        {{ subcategory.name }}<span class="material-symbols-outlined text-sm" aria-hidden="true">edit</span>
+                      </summary>
+                      <div class="mt-3 w-full rounded-xl border border-slate-100 bg-white p-3 sm:min-w-72">
+                        <form method="post" class="space-y-3">
+                          {% csrf_token %}<input type="hidden" name="action" value="update_subcategory"><input type="hidden" name="subcategory_id" value="{{ subcategory.id }}">
+                          <label class="block"><span class="mb-1 block text-xs font-semibold text-slate-600">Name</span><input name="name" value="{{ subcategory.name }}" required maxlength="100" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm"></label>
+                          <label class="block"><span class="mb-1 block text-xs font-semibold text-slate-600">Parent category</span><select name="category" required class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm">{% for parent_category in categories %}<option value="{{ parent_category.id }}" {% if parent_category.id == category.id %}selected{% endif %}>{{ parent_category.name }}</option>{% endfor %}</select></label>
+                          <fieldset><legend class="mb-1 text-xs font-semibold text-slate-600">Icon</legend><div class="grid grid-cols-6 gap-1.5">
+                            <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="icon" value="" {% if not subcategory.icon %}checked{% endif %}><span class="flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-mist text-[9px] font-bold peer-checked:border-ink peer-checked:bg-mint">Auto</span></label>
+                            {% for icon, label in icon_options %}<label class="cursor-pointer"><input class="peer sr-only" type="radio" name="icon" value="{{ icon }}" aria-label="{{ label }}" {% if subcategory.icon == icon %}checked{% endif %}><span title="{{ label }}" class="flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-mist text-lg peer-checked:border-ink peer-checked:bg-mint">{{ icon }}</span></label>{% endfor %}
+                          </div></fieldset>
+                          <button type="submit" class="min-h-10 rounded-lg bg-ink px-3 py-2 text-xs font-bold text-white">Save subcategory</button>
+                        </form>
+                        <form method="post" class="mt-2" data-confirm-delete data-confirm-message="Delete {{ subcategory.name|escapejs }}? Transactions will keep their parent category.">
+                          {% csrf_token %}<input type="hidden" name="action" value="delete_subcategory"><input type="hidden" name="subcategory_id" value="{{ subcategory.id }}">
+                          <button type="submit" class="min-h-10 rounded-lg px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">Delete subcategory</button>
+                        </form>
+                      </div>
+                    </details>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p class="text-xs text-slate-500">No subcategories yet.</p>
+              {% endif %}
+            </div>
+            <details class="mt-4 border-t border-slate-100 pt-3">
+              <summary class="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm font-bold text-slate-600"><span>Manage category</span><span class="material-symbols-outlined text-lg" aria-hidden="true">tune</span></summary>
+              <div class="mt-3 space-y-3">
+                <form method="post" class="space-y-3 rounded-xl bg-mist p-3">
+                  {% csrf_token %}<input type="hidden" name="action" value="update_category"><input type="hidden" name="category_id" value="{{ category.id }}">
+                  <label class="block"><span class="mb-1 block text-xs font-semibold text-slate-600">Name</span><input name="name" value="{{ category.name }}" required maxlength="100" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm"></label>
+                  <label class="block"><span class="mb-1 block text-xs font-semibold text-slate-600">Category type</span><select name="type" required class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm"><option value="expense" {% if category.type != "income" %}selected{% endif %}>Expense</option><option value="income" {% if category.type == "income" %}selected{% endif %}>Income</option></select></label>
+                  <fieldset><legend class="mb-1 text-xs font-semibold text-slate-600">Icon</legend><div class="grid grid-cols-6 gap-1.5">
+                    <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="icon" value="" {% if not category.icon %}checked{% endif %}><span class="flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-[9px] font-bold peer-checked:border-ink peer-checked:bg-mint">Auto</span></label>
+                    {% for icon, label in icon_options %}<label class="cursor-pointer"><input class="peer sr-only" type="radio" name="icon" value="{{ icon }}" aria-label="{{ label }}" {% if category.icon == icon %}checked{% endif %}><span title="{{ label }}" class="flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-lg peer-checked:border-ink peer-checked:bg-mint">{{ icon }}</span></label>{% endfor %}
+                  </div></fieldset>
+                  <button type="submit" class="min-h-10 rounded-lg bg-ink px-3 py-2 text-xs font-bold text-white">Save category</button>
+                </form>
+                <form method="post" data-confirm-delete data-confirm-message="Delete {{ category.name|escapejs }}? Transactions will remain uncategorised, but its subcategories and category budget limits will be removed.">
+                  {% csrf_token %}<input type="hidden" name="action" value="delete_category"><input type="hidden" name="category_id" value="{{ category.id }}">
+                  <button type="submit" class="min-h-10 rounded-lg px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">Delete category and subcategories</button>
+                </form>
+              </div>
+            </details>
           </article>
         {% empty %}
-          <div class="rounded-[1.35rem] border border-dashed border-slate-300 bg-white p-8">
-            <h3 class="font-display text-xl font-bold">No categories yet.</h3><p class="mt-2 text-sm text-slate-500">Create one to make your reports more useful.</p>
+          <div class="rounded-[1.35rem] border border-dashed border-slate-300 bg-white p-8 sm:col-span-2">
+            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-mist text-2xl" aria-hidden="true">🗂️</span>
+            <h3 class="mt-4 font-display text-xl font-bold">Start with a few categories.</h3>
+            <p class="mt-2 max-w-md text-sm leading-6 text-slate-500">Try everyday essentials, transport, home and income. You can change the icons to make them yours.</p>
           </div>
         {% endfor %}
-      </section>
-      <div class="space-y-6">
-        <section class="rounded-[1.5rem] bg-ink p-6 text-white shadow-soft">
-          <p class="text-xs font-bold uppercase tracking-[.16em] text-mint">New category</p>
-          <form method="post" class="mt-5 space-y-4">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="category" />
-            <input name="name" required placeholder="e.g. Food" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-mint" />
-            <select name="type" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-mint">
-              <option value="expense" class="text-ink">Expense</option>
-              <option value="income" class="text-ink">Income</option>
-            </select><button type="submit" class="w-full rounded-xl bg-mint px-4 py-3 text-sm font-bold text-ink">Create category</button>
-          </form>
-        </section>
-        <section class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-soft">
-          <p class="text-xs font-bold uppercase tracking-[.16em] text-slate-400">New subcategory</p>
-          <form method="post" class="mt-5 space-y-4">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="subcategory" />
-            <input name="name" required placeholder="e.g. Groceries" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-ink" />
-            <select name="category" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-ink">
-              <option value="">Choose category</option>
-              {% for category in categories %}
-                <option value="{{ category.id }}">{{ category.name }}</option>
-              {% endfor %}
-            </select><button type="submit" class="w-full rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white">Create subcategory</button>
-          </form>
-        </section>
       </div>
+    </section>
+
+    <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-1">
+      <section class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-6">
+        <div class="flex items-center gap-3">
+          <span class="grid h-10 w-10 place-items-center rounded-xl bg-mist text-xl" aria-hidden="true">✨</span>
+          <div><p class="text-xs font-bold uppercase tracking-[.14em] text-slate-500">Make it yours</p><h2 class="font-display text-lg font-bold">New category</h2></div>
+        </div>
+        <form method="post" class="mt-5 space-y-4">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="category">
+          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-slate-700">Name</span><input name="name" required maxlength="100" placeholder="e.g. Food" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-ink"></label>
+          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-slate-700">Type</span><select name="type" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-ink"><option value="expense">Expense</option><option value="income">Income</option></select></label>
+          <fieldset>
+            <legend class="mb-2 text-sm font-semibold text-slate-700">Icon <span class="font-normal text-slate-500">· choose one or use Auto</span></legend>
+            <div class="grid grid-cols-6 gap-2">
+              <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="icon" value="" checked aria-label="Use suggested icon"><span title="Suggested" class="flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-mist text-[10px] font-bold text-slate-600 peer-checked:border-ink peer-checked:bg-mint peer-checked:text-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-ink">Auto</span></label>
+              {% for icon, label in icon_options %}
+                <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="icon" value="{{ icon }}" aria-label="{{ label }}"><span title="{{ label }}" class="flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-mist text-xl transition hover:bg-white peer-checked:border-ink peer-checked:bg-mint peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-ink">{{ icon }}</span></label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          <button type="submit" class="w-full rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white transition hover:bg-ink/90">Create category</button>
+        </form>
+      </section>
+
+      <section class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-6">
+        <div class="flex items-center gap-3">
+          <span class="grid h-10 w-10 place-items-center rounded-xl bg-mint text-xl" aria-hidden="true">➕</span>
+          <div><p class="text-xs font-bold uppercase tracking-[.14em] text-slate-500">Add more detail</p><h2 class="font-display text-lg font-bold">New subcategory</h2></div>
+        </div>
+        <form method="post" class="mt-5 space-y-4">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="subcategory">
+          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-slate-700">Name</span><input name="name" required maxlength="100" placeholder="e.g. Groceries" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-ink"></label>
+          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-slate-700">Category</span><select name="category" required class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-ink"><option value="">Choose category</option>{% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}</select></label>
+          <fieldset>
+            <legend class="mb-2 text-sm font-semibold text-slate-700">Icon <span class="font-normal text-slate-500">· choose one or use Auto</span></legend>
+            <div class="grid grid-cols-6 gap-2">
+              <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="icon" value="" checked aria-label="Use suggested icon"><span title="Suggested" class="flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-mist text-[10px] font-bold text-slate-600 peer-checked:border-ink peer-checked:bg-mint peer-checked:text-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-ink">Auto</span></label>
+              {% for icon, label in icon_options %}
+                <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="icon" value="{{ icon }}" aria-label="{{ label }}"><span title="{{ label }}" class="flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-mist text-xl transition hover:bg-white peer-checked:border-ink peer-checked:bg-mint peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-ink">{{ icon }}</span></label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          <button type="submit" class="w-full rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white transition hover:bg-ink/90">Create subcategory</button>
+        </form>
+      </section>
     </div>
   </div>
+</div>
 {% endblock %}

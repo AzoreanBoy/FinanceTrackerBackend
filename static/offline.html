@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102a43">
+    <title>Offline · FinanceTracker</title>
+    <style>
+      :root { color-scheme: light; font-family: system-ui, sans-serif; background: #edf4f7; color: #183b56; }
+      body { display: grid; min-height: 100vh; margin: 0; place-items: center; }
+      main { width: min(28rem, calc(100% - 3rem)); padding: 2rem; border: 1px solid #d7e2e8; border-radius: 1.5rem; background: #f7fafb; box-shadow: 0 18px 50px #183b5614; }
+      .mark { display: grid; width: 3rem; height: 3rem; place-items: center; border-radius: 1rem; background: #183b56; color: #d9eee5; font-weight: 800; }
+      h1 { margin: 1.5rem 0 .5rem; font-size: 1.6rem; }
+      p { color: #526b7a; line-height: 1.6; }
+      a { display: inline-block; margin-top: .75rem; padding: .75rem 1rem; border-radius: .75rem; background: #2f8f9d; color: #102a43; font-weight: 700; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark" aria-hidden="true">FT</div>
+      <h1>You’re offline.</h1>
+      <p>Your financial data is not stored for offline access on this device. Reconnect to securely load your accounts and transactions.</p>
+      <a href="/">Try again</a>
+    </main>
+  </body>
+</html>

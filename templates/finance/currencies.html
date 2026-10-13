@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Currencies{% endblock %}
+{% block eyebrow %}Clear, dated conversions{% endblock %}
+{% block page_heading %}Currencies{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-5xl space-y-6">
+  {% include "finance/_messages.html" %}
+  <section class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7">
+    <h2 class="font-display text-xl font-bold">Reporting currency</h2>
+    <p class="mt-2 text-sm leading-6 text-slate-600">Your account and transaction amounts remain in their original currency. Exchange rates are entered by you and apply from their effective date; missing rates are never guessed.</p>
+    <form method="post" class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
+      {% csrf_token %}<input type="hidden" name="action" value="settings">
+      <label class="block flex-1"><span class="mb-2 block text-sm font-semibold">Three-letter reporting code</span><input name="reporting_currency" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" value="{{ settings.reporting_currency }}" class="w-full rounded-xl border border-slate-300 bg-mist px-4 py-3 text-sm uppercase"></label>
+      <button class="min-h-12 rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white">Save currency</button>
+    </form>
+  </section>
+  <div class="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
+    <section class="h-fit rounded-[1.5rem] bg-ink p-6 text-white">
+      <h2 class="font-display text-xl font-bold">Add an exchange rate</h2>
+      <p class="mt-2 text-sm leading-6 text-slate-200">Enter how many units of the target currency equal one unit of the source currency.</p>
+      <form method="post" class="mt-5 space-y-4">
+        {% csrf_token %}<input type="hidden" name="action" value="rate">
+        <div class="grid grid-cols-2 gap-3">
+          <label><span class="mb-2 block text-sm font-semibold">From</span><input name="from_currency" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" placeholder="USD" class="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-sm uppercase text-white"></label>
+          <label><span class="mb-2 block text-sm font-semibold">To</span><input name="to_currency" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" placeholder="{{ settings.reporting_currency }}" class="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-sm uppercase text-white"></label>
+        </div>
+        <label class="block"><span class="mb-2 block text-sm font-semibold">Target units per 1 source unit</span><input name="rate" type="number" min="0.00000001" step="0.00000001" required placeholder="0.92" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white"></label>
+        <label class="block"><span class="mb-2 block text-sm font-semibold">Effective from</span><input name="effective_date" type="date" required class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white"></label>
+        <label class="block"><span class="mb-2 block text-sm font-semibold">Source or note</span><input name="source" maxlength="100" value="User entered" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white"></label>
+        <button class="w-full rounded-xl bg-mint px-4 py-3 text-sm font-bold text-ink">Save dated rate</button>
+      </form>
+    </section>
+    <section class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-soft">
+      <div class="border-b border-slate-100 p-5"><h2 class="font-display text-xl font-bold">Your rate history</h2><p class="mt-1 text-sm text-slate-600">Rates are private to your account. The most recent rate on or before a transaction date is used.</p></div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[30rem] text-left text-sm">
+          <thead><tr class="bg-mist text-xs uppercase text-slate-600"><th class="px-5 py-3">Effective date</th><th class="px-5 py-3">Rate</th><th class="px-5 py-3">Source</th><th class="px-5 py-3"><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody>{% for rate in rates %}<tr class="border-t border-slate-100"><th class="px-5 py-3 font-semibold">{{ rate.effective_date|date:"d M Y" }}</th><td class="px-5 py-3">1 {{ rate.from_currency }} = {{ rate.rate }} {{ rate.to_currency }}</td><td class="px-5 py-3 text-slate-600">{{ rate.source }}</td><td class="px-5 py-3"><form method="post" data-confirm-delete data-confirm-message="Delete this dated exchange rate? Reports will no longer use it.">{% csrf_token %}<input type="hidden" name="action" value="delete_rate"><input type="hidden" name="rate_id" value="{{ rate.pk }}"><button type="submit" class="min-h-9 rounded-lg px-2 py-1 text-xs font-bold text-rose-700 hover:bg-rose-50">Delete</button></form></td></tr>{% empty %}<tr><td colspan="4" class="px-5 py-8 text-center text-slate-600">No rates entered yet.</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
+    <h2 class="font-bold">No conversion is implied</h2>
+    <p class="mt-1">Until the reporting currency and dated rates are applied to a report, the app keeps each account's balances in its own currency. Cross-currency transfers require an explicit destination amount and exchange rate.</p>
+  </section>
+</div>
+{% endblock %}

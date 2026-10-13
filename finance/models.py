@@ -1,7 +1,34 @@
 import uuid
+from decimal import Decimal
 
 from django.db import models, transaction as db_transaction
 from django.utils import timezone
+
+
+ACCOUNT_COLOR_CHOICES = (
+    ("#E88B72", "Coral"),
+    ("#55A98B", "Mint"),
+    ("#5797B8", "Ocean"),
+    ("#D6A23F", "Honey"),
+    ("#9473B5", "Lavender"),
+    ("#D36B87", "Rose"),
+    ("#6176B8", "Indigo"),
+    ("#718B62", "Sage"),
+)
+ACCOUNT_ICON_CHOICES = (
+    ("🏦", "Bank"),
+    ("💳", "Card"),
+    ("👛", "Wallet"),
+    ("💰", "Cash"),
+    ("💼", "Work"),
+    ("🐷", "Savings"),
+    ("📈", "Investments"),
+    ("✈️", "Travel"),
+    ("🏠", "Home"),
+    ("🛍️", "Shopping"),
+    ("🎓", "Education"),
+    ("✨", "Other"),
+)
 
 
 class Account(models.Model):
@@ -21,6 +48,17 @@ class Account(models.Model):
 
     name = models.CharField(max_length=100)
     balance = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default="EUR")
+    color = models.CharField(
+        max_length=7, choices=ACCOUNT_COLOR_CHOICES, default="#E88B72"
+    )
+    icon = models.CharField(
+        max_length=16, choices=ACCOUNT_ICON_CHOICES, default="🏦"
+    )
+    opening_balance = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    opening_balance_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
@@ -94,9 +132,10 @@ class Category(models.Model):
         blank=True,
         null=True,
     )
+    icon = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.name}"
 
 
 class SubCategory(models.Model):
@@ -118,9 +157,10 @@ class SubCategory(models.Model):
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, related_name="subcategories"
     )
+    icon = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.category} | {self.name} | {self.category.type}"
+        return f"{self.category} | {self.name}"
 
 
 class Transaction(models.Model):
@@ -171,6 +211,17 @@ class Transaction(models.Model):
         blank=True,
         related_name="transactions",
     )
+    tags = models.ManyToManyField("Tag", blank=True, related_name="transactions")
+    import_fingerprint = models.CharField(max_length=64, null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["account", "import_fingerprint"],
+                condition=models.Q(import_fingerprint__isnull=False),
+                name="unique_account_import_fingerprint",
+            )
+        ]
 
     def save(self, *args, **kwargs):
         # If a subcategory is provided, automatically set the category to the subcategory's category
@@ -257,23 +308,96 @@ class Transfer(models.Model):
         Account, on_delete=models.CASCADE, related_name="incoming_transfers"
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    destination_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    exchange_rate = models.DecimalField(
+        max_digits=18, decimal_places=8, null=True, blank=True
+    )
     transaction_date = models.DateField(default=timezone.localdate)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         with db_transaction.atomic():
-            self.from_account.balance -= self.amount
-            self.from_account.save()
-            self.to_account.balance += self.amount
-            self.to_account.save()
+            if self.from_account_id == self.to_account_id:
+                raise ValueError("A transfer must use two different accounts.")
+            if self.from_account.owner_id != self.to_account.owner_id:
+                raise ValueError("A transfer's accounts must have the same owner.")
+            currencies_differ = (
+                self.from_account.currency != self.to_account.currency
+            )
+            if currencies_differ:
+                if (
+                    self.destination_amount is None
+                    or self.destination_amount <= 0
+                    or self.exchange_rate is None
+                    or self.exchange_rate <= 0
+                ):
+                    raise ValueError(
+                        "Cross-currency transfers require a positive destination amount and exchange rate."
+                    )
+                expected_destination = (
+                    self.amount * self.exchange_rate
+                ).quantize(Decimal("0.01"))
+                if self.destination_amount != expected_destination:
+                    raise ValueError(
+                        "The destination amount must match the exchange rate."
+                    )
+            else:
+                self.destination_amount = self.amount
+                self.exchange_rate = None
+
+            previous = None
+            if not self._state.adding:
+                previous = type(self).objects.select_for_update().get(
+                    pk=self.pk
+                )
+            account_ids = {
+                self.from_account_id,
+                self.to_account_id,
+            }
+            if previous:
+                account_ids.update(
+                    {previous.from_account_id, previous.to_account_id}
+                )
+            accounts = {
+                account.pk: account
+                for account in (
+                    Account.objects.select_for_update()
+                    .filter(pk__in=account_ids)
+                    .order_by("pk")
+                )
+            }
+            if previous:
+                accounts[previous.from_account_id].balance += previous.amount
+                accounts[previous.to_account_id].balance -= (
+                    previous.destination_amount or previous.amount
+                )
+            accounts[self.from_account_id].balance -= self.amount
+            accounts[self.to_account_id].balance += self.destination_amount
+            for account in accounts.values():
+                account.save(update_fields=["balance"])
+            self.from_account = accounts[self.from_account_id]
+            self.to_account = accounts[self.to_account_id]
             super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         with db_transaction.atomic():
-            self.from_account.balance += self.amount
-            self.from_account.save()
-            self.to_account.balance -= self.amount
-            self.to_account.save()
+            previous = type(self).objects.select_for_update().get(pk=self.pk)
+            accounts = {
+                account.pk: account
+                for account in (
+                    Account.objects.select_for_update()
+                    .filter(pk__in=[previous.from_account_id, previous.to_account_id])
+                    .order_by("pk")
+                )
+            }
+            accounts[previous.from_account_id].balance += previous.amount
+            accounts[previous.to_account_id].balance -= (
+                previous.destination_amount or previous.amount
+            )
+            for account in accounts.values():
+                account.save(update_fields=["balance"])
             super().delete(*args, **kwargs)
 
     def __str__(self):
@@ -317,6 +441,7 @@ class Budget(models.Model):
     )
     name = models.CharField(max_length=100)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=3, default="EUR")
     period = models.CharField(max_length=10, choices=PERIOD_CHOICES, default="monthly")
     start_date = models.DateField(default=timezone.localdate)
     end_date = models.DateField(null=True, blank=True)
@@ -376,6 +501,7 @@ class RecurringTransaction(models.Model):
     )
     frequency = models.CharField(max_length=10, choices=FREQUENCY_CHOICES)
     next_date = models.DateField(default=timezone.localdate)
+    schedule_day = models.PositiveSmallIntegerField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -383,5 +509,115 @@ class RecurringTransaction(models.Model):
     class Meta:
         ordering = ["active", "next_date", "title"]
 
+    def save(self, *args, **kwargs):
+        if self.schedule_day is None and self.next_date:
+            self.schedule_day = self.next_date.day
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.title
+
+
+class UserFinanceSettings(models.Model):
+    owner = models.OneToOneField(
+        "accounts.CustomUser", on_delete=models.CASCADE, related_name="finance_settings"
+    )
+    reporting_currency = models.CharField(max_length=3, default="EUR")
+    payday_day = models.PositiveSmallIntegerField(default=25)
+
+    def __str__(self):
+        return f"{self.owner} finance settings"
+
+
+class ExchangeRate(models.Model):
+    owner = models.ForeignKey(
+        "accounts.CustomUser", on_delete=models.CASCADE, related_name="exchange_rates"
+    )
+    from_currency = models.CharField(max_length=3)
+    to_currency = models.CharField(max_length=3)
+    rate = models.DecimalField(max_digits=18, decimal_places=8)
+    effective_date = models.DateField()
+    source = models.CharField(max_length=100, default="User entered")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-effective_date", "from_currency", "to_currency"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "from_currency", "to_currency", "effective_date"],
+                name="unique_user_exchange_rate_day",
+            ),
+            models.CheckConstraint(condition=models.Q(rate__gt=0), name="exchange_rate_positive"),
+        ]
+
+    def __str__(self):
+        return f"1 {self.from_currency} = {self.rate} {self.to_currency}"
+
+
+class Tag(models.Model):
+    owner = models.ForeignKey(
+        "accounts.CustomUser", on_delete=models.CASCADE, related_name="finance_tags"
+    )
+    name = models.CharField(max_length=40)
+    color = models.CharField(max_length=7, default="#2f8f9d")
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "name"], name="unique_user_finance_tag")
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class Debt(models.Model):
+    DIRECTIONS = [("lent", "Money lent"), ("borrowed", "Money borrowed")]
+    STATUSES = [("open", "Open"), ("settled", "Settled")]
+
+    owner = models.ForeignKey(
+        "accounts.CustomUser", on_delete=models.CASCADE, related_name="debts"
+    )
+    person = models.CharField(max_length=100)
+    description = models.CharField(max_length=200, blank=True)
+    direction = models.CharField(max_length=10, choices=DIRECTIONS)
+    principal = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=3, default="EUR")
+    opened_on = models.DateField(default=timezone.localdate)
+    due_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=STATUSES, default="open")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["status", "due_date", "person"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(principal__gt=0), name="debt_principal_positive")
+        ]
+
+    @property
+    def repaid(self):
+        return self.repayments.aggregate(total=models.Sum("amount"))["total"] or Decimal("0.00")
+
+    @property
+    def outstanding(self):
+        return max(self.principal - self.repaid, Decimal("0.00"))
+
+    def __str__(self):
+        return f"{self.get_direction_display()} — {self.person}"
+
+
+class DebtRepayment(models.Model):
+    debt = models.ForeignKey(Debt, on_delete=models.CASCADE, related_name="repayments")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    repayment_date = models.DateField(default=timezone.localdate)
+    note = models.CharField(max_length=200, blank=True)
+    transaction = models.ForeignKey(
+        Transaction, on_delete=models.SET_NULL, null=True, blank=True, related_name="debt_repayments"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-repayment_date", "-created_at"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name="debt_repayment_positive")
+        ]

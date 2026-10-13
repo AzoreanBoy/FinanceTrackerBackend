@@ -1,10 +1,19 @@
 {
-  "name": "Ledger Finance",
-  "short_name": "Ledger",
+  "name": "Finance Tracker",
+  "short_name": "FinTrack",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f4f7f8",
-  "theme_color": "#102a43",
+  "orientation": "any",
+  "background_color": "#fbf7f4",
+  "theme_color": "#49394f",
   "description": "A calm, practical home for your finances.",
-  "icons": []
+  "icons": [
+    {
+      "src": "/static/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

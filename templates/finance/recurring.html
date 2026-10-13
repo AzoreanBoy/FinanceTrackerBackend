@@ -11,13 +11,14 @@
 {% block content %}
   <div class="mx-auto max-w-6xl">
     {% include 'finance/_messages.html' %}
-    <div class="mb-8">
-      <p class="text-sm text-slate-500">Subscriptions, salary and regular bills in one calm list.</p><h2 class="mt-2 font-display text-3xl font-bold tracking-tight">Recurring transactions.</h2>
+    <div class="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div><p class="text-sm text-slate-500">Subscriptions, salary and regular bills in one calm list.</p><h2 class="mt-2 font-display text-3xl font-bold tracking-tight">Recurring transactions.</h2></div>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="process_due"><button type="submit" class="min-h-11 rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">Process due items</button></form>
     </div>
     <div class="grid gap-8 lg:grid-cols-[1.25fr_.75fr]">
       <section class="space-y-3">
         {% for item in recurring_transactions %}
-          <article class="flex items-center gap-4 rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft">
+          <article class="flex flex-wrap items-center gap-4 rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-soft">
             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-mint text-lg">↻</span><div class="min-w-0 flex-1">
               <h3 class="truncate font-display font-bold">{{ item.title }}</h3><p class="mt-1 text-sm text-slate-500">
                 {{ item.account.name }} · {{ item.frequency|title }}
@@ -27,9 +28,29 @@
               </p>
             </div>
             <div class="text-right">
-              <p class="font-bold">€ {{ item.amount|floatformat:2 }}</p>
+              <p class="font-bold">{{ item.account.currency }} {{ item.amount|floatformat:2 }}</p>
               <p class="mt-1 text-xs font-semibold text-slate-500">Next {{ item.next_date|date:'d M Y' }}</p>
             </div>
+            <details class="basis-full border-t border-slate-100 pt-3">
+              <summary class="cursor-pointer text-sm font-bold">Edit recurring item</summary>
+              <form method="post" class="mt-4 grid gap-3 sm:grid-cols-2">
+                {% csrf_token %}<input type="hidden" name="action" value="update"><input type="hidden" name="recurring_id" value="{{ item.pk }}">
+                <label class="sm:col-span-2"><span class="mb-1 block text-xs font-semibold text-slate-600">Title</span><input name="title" value="{{ item.title }}" maxlength="100" required class="w-full rounded-lg border border-slate-300 bg-mist px-3 py-2.5"></label>
+                <label><span class="mb-1 block text-xs font-semibold text-slate-600">Amount ({{ item.account.currency }})</span><input name="amount" type="number" min="0.01" step="0.01" value="{{ item.amount }}" required class="w-full rounded-lg border border-slate-300 bg-mist px-3 py-2.5"></label>
+                <label><span class="mb-1 block text-xs font-semibold text-slate-600">Type</span><select name="type" class="w-full rounded-lg border border-slate-300 bg-mist px-3 py-2.5"><option value="expense" {% if item.type == "expense" %}selected{% endif %}>Expense</option><option value="income" {% if item.type == "income" %}selected{% endif %}>Income</option></select></label>
+                <label><span class="mb-1 block text-xs font-semibold text-slate-600">Frequency</span><select name="frequency" class="w-full rounded-lg border border-slate-300 bg-mist px-3 py-2.5">{% for value,label in item.FREQUENCY_CHOICES %}<option value="{{ value }}" {% if item.frequency == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+                <label><span class="mb-1 block text-xs font-semibold text-slate-600">Next date</span><input name="next_date" type="date" value="{{ item.next_date|date:'Y-m-d' }}" required class="w-full rounded-lg border border-slate-300 bg-mist px-3 py-2.5"></label>
+                <label><span class="mb-1 block text-xs font-semibold text-slate-600">End date (optional)</span><input name="end_date" type="date" value="{{ item.end_date|date:'Y-m-d' }}" class="w-full rounded-lg border border-slate-300 bg-mist px-3 py-2.5"></label>
+                <label><span class="mb-1 block text-xs font-semibold text-slate-600">Account</span><select name="account" required class="w-full rounded-lg border border-slate-300 bg-mist px-3 py-2.5">{% for account in accounts %}<option value="{{ account.pk }}" {% if item.account_id == account.pk %}selected{% endif %}>{{ account.name }} · {{ account.currency }}</option>{% endfor %}</select></label>
+                <label><span class="mb-1 block text-xs font-semibold text-slate-600">Category</span><select name="category" class="w-full rounded-lg border border-slate-300 bg-mist px-3 py-2.5"><option value="">No category</option>{% for category in categories %}<option value="{{ category.pk }}" {% if item.category_id == category.pk %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
+                <label class="flex items-center gap-2 text-sm font-semibold sm:col-span-2"><input type="checkbox" name="active" {% if item.active %}checked{% endif %} class="h-4 w-4 rounded border-slate-300">Active and included in processing</label>
+                <button class="min-h-11 rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white sm:col-span-2">Save recurring item</button>
+              </form>
+            </details>
+            <form method="post" class="basis-full" data-confirm-delete data-confirm-message="Delete this recurring item? Transactions already created will remain unchanged.">
+              {% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="recurring_id" value="{{ item.pk }}">
+              <button type="submit" class="min-h-10 rounded-lg px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">Delete recurring item</button>
+            </form>
           </article>
         {% empty %}
           <div class="rounded-[1.35rem] border border-dashed border-slate-300 bg-white p-8">
@@ -54,9 +75,8 @@
           </select>
           <input name="next_date" type="date" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-mint" />
           <select name="account" required class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-mint">
-            <option value="" class="text-ink">Choose account</option>
             {% for account in accounts %}
-              <option value="{{ account.id }}" class="text-ink">{{ account.name }}</option>
+              <option value="{{ account.id }}" class="text-ink" {% if forloop.first %}selected{% endif %}>{{ account.name }} · {{ account.currency }}</option>
             {% endfor %}
           </select>
           <select name="category" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-mint">

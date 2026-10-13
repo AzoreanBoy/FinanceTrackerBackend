@@ -2,4 +2,69 @@
 
 {% block title %}Account{% endblock %}
 {% block eyebrow %}Where your money lives{% endblock %}
-{% block page_heading %}Accounts{% endblock %}
+{% block page_heading %}{{ account.name }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-5xl space-y-6">
+  {% include "finance/_messages.html" %}
+  <a href="{% url 'finance_web:accounts' %}" class="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-slate-600 hover:text-ink"><span aria-hidden="true">←</span> All accounts</a>
+
+  <section class="rounded-[1.5rem] bg-ink p-6 text-white shadow-soft sm:p-8" aria-label="Current account balance">
+    <p class="text-xs font-bold uppercase tracking-[.16em] text-mint">Current balance</p>
+    <p class="mt-3 font-display text-4xl font-bold">{{ account.currency }} {{ account.balance|floatformat:2 }}</p>
+    {% if has_balance_history %}
+      <p class="mt-3 text-sm text-slate-200">Dated history available from {{ account.opening_balance_date|date:"d M Y" }}.</p>
+    {% else %}
+      <p class="mt-3 text-sm text-slate-200">Historical balances are hidden until a dated opening balance is recorded.</p>
+    {% endif %}
+  </section>
+
+  <details class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-6" {% if not has_balance_history %}open{% endif %}>
+    <summary class="cursor-pointer font-display text-lg font-bold">Set a confirmed opening balance</summary>
+    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Use a balance and date you can verify. This creates the starting point for history; it does not change the account's current balance.</p>
+    <form method="post" class="mt-4 grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      {% csrf_token %}
+      <label>
+        <span class="mb-2 block text-sm font-semibold text-slate-700">Balance ({{ account.currency }})</span>
+        <input name="opening_balance" type="number" step="0.01" required value="{{ account.opening_balance|default_if_none:'' }}" class="w-full rounded-xl border border-slate-300 bg-mist px-3 py-3 text-sm text-ink focus:border-ink">
+      </label>
+      <label>
+        <span class="mb-2 block text-sm font-semibold text-slate-700">As of date</span>
+        <input name="opening_balance_date" type="date" required max="{% now 'Y-m-d' %}" value="{{ account.opening_balance_date|date:'Y-m-d' }}" class="w-full rounded-xl border border-slate-300 bg-mist px-3 py-3 text-sm text-ink focus:border-ink">
+      </label>
+      <button type="submit" class="min-h-12 rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white hover:bg-ink/90">Save starting point</button>
+    </form>
+  </details>
+
+  {% if has_balance_history %}
+    <section class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-soft" aria-labelledby="balance-history-heading">
+      <div class="border-b border-slate-100 p-5 sm:p-7">
+        <p class="text-xs font-bold uppercase tracking-[.14em] text-slate-600">Account history</p>
+        <h2 id="balance-history-heading" class="mt-1 font-display text-xl font-bold">Balance timeline</h2>
+        <p class="mt-2 text-sm text-slate-600">Starts from the opening balance you recorded. Only dated activity after that date is included.</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[32rem] text-left text-sm">
+          <caption class="sr-only">Account balance history by dated activity</caption>
+          <thead><tr class="border-b border-slate-200 bg-mist text-xs uppercase tracking-wide text-slate-600"><th scope="col" class="px-5 py-3 sm:px-7">Date</th><th scope="col" class="px-5 py-3">Activity</th><th scope="col" class="px-5 py-3 text-right">Change</th><th scope="col" class="px-5 py-3 text-right sm:px-7">Balance</th></tr></thead>
+          <tbody>
+            {% for entry in history %}
+              <tr class="border-b border-slate-100 last:border-0">
+                <th scope="row" class="whitespace-nowrap px-5 py-4 font-semibold sm:px-7">{{ entry.date|date:"d M Y" }}</th>
+                <td class="px-5 py-4">{{ entry.description }}</td>
+                <td class="whitespace-nowrap px-5 py-4 text-right {% if entry.change < 0 %}text-rose-700{% elif entry.change > 0 %}text-emerald-700{% else %}text-slate-500{% endif %}">{% if entry.change is not None %}{% if entry.change > 0 %}+{% endif %}{{ account.currency }} {{ entry.change|floatformat:2 }}{% else %}—{% endif %}</td>
+                <td class="whitespace-nowrap px-5 py-4 text-right font-bold sm:px-7">{{ account.currency }} {{ entry.balance|floatformat:2 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% else %}
+    <section class="rounded-[1.5rem] border border-dashed border-slate-300 bg-white p-6 shadow-soft sm:p-8">
+      <h2 class="font-display text-xl font-bold">No reliable balance history yet</h2>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">To avoid showing reconstructed figures as facts, this account has no historical timeline until its opening balance and date are confirmed. Current balance tracking continues normally.</p>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}
